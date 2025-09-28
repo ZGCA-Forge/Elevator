@@ -1,0 +1,220 @@
+name: CI
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main, develop ]
+  schedule:
+    # Run tests daily at 6 AM UTC
+    - cron: '0 6 * * *'
+
+jobs:
+  test:
+    name: Test Python ${{ matrix.python-version }} on ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+        python-version: ['3.8', '3.9', '3.10', '3.11', '3.12']
+        
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Set up Python ${{ matrix.python-version }}
+      uses: actions/setup-python@v4
+      with:
+        python-version: ${{ matrix.python-version }}
+        
+    - name: Cache pip dependencies
+      uses: actions/cache@v3
+      with:
+        path: ~/.cache/pip
+        key: ${{ runner.os }}-pip-${{ hashFiles('**/pyproject.toml') }}
+        restore-keys: |
+          ${{ runner.os }}-pip-
+          
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install -e .
+        
+    - name: Check dependencies
+      run: |
+        python run_all_tests.py --check-deps
+        
+    - name: Run linting
+      run: |
+        black --check msgcenterpy tests
+        isort --check-only msgcenterpy tests
+        
+    - name: Run type checking
+      run: |
+        mypy msgcenterpy
+        
+    - name: Run tests with coverage
+      run: |
+        python -m pytest --cov=msgcenterpy --cov-report=xml --cov-report=term-missing
+        
+    - name: Upload coverage to Codecov
+      if: matrix.python-version == '3.11' && matrix.os == 'ubuntu-latest'
+      uses: codecov/codecov-action@v3
+      with:
+        file: ./coverage.xml
+        flags: unittests
+        name: codecov-umbrella
+        fail_ci_if_error: false
+
+  test-with-ros2:
+    name: Test with ROS2 (Ubuntu)
+    runs-on: ubuntu-latest
+    container:
+      image: ros:humble
+      
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Set up Python
+      run: |
+        apt-get update
+        apt-get install -y python3-pip python3-dev
+        
+    - name: Install ROS2 dependencies
+      run: |
+        apt-get update
+        apt-get install -y \
+          python3-rosidl-runtime-py \
+          python3-rclpy \
+          ros-humble-std-msgs \
+          ros-humble-geometry-msgs
+          
+    - name: Install package
+      run: |
+        python3 -m pip install --upgrade pip
+        pip3 install -e .[dev,ros2]
+        
+    - name: Run ROS2 tests
+      run: |
+        . /opt/ros/humble/setup.sh
+        python3 run_all_tests.py --type ros2
+        
+    - name: Run conversion tests
+      run: |
+        . /opt/ros/humble/setup.sh
+        python3 run_all_tests.py --type conversion
+
+  build:
+    name: Build and check package
+    runs-on: ubuntu-latest
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.11'
+        
+    - name: Install build dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install build twine check-manifest
+        
+    - name: Check manifest
+      run: check-manifest
+      
+    - name: Build package
+      run: python -m build
+      
+    - name: Check package
+      run: twine check dist/*
+      
+    - name: Upload build artifacts
+      uses: actions/upload-artifact@v3
+      with:
+        name: dist
+        path: dist/
+
+  security:
+    name: Security scan
+    runs-on: ubuntu-latest
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.11'
+        
+    - name: Install security tools
+      run: |
+        python -m pip install --upgrade pip
+        pip install bandit safety
+        
+    - name: Run bandit security scan
+      run: bandit -r msgcenterpy/ -f json -o bandit-report.json
+      continue-on-error: true
+      
+    - name: Run safety security scan
+      run: safety check --json --output safety-report.json
+      continue-on-error: true
+      
+    - name: Upload security reports
+      uses: actions/upload-artifact@v3
+      with:
+        name: security-reports
+        path: |
+          bandit-report.json
+          safety-report.json
+      if: always()
+
+  docs:
+    name: Build documentation
+    runs-on: ubuntu-latest
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.11'
+        
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install -e .[docs]
+        
+    # 为将来的文档构建预留
+    - name: Check documentation
+      run: |
+        echo "Documentation build placeholder"
+        # sphinx-build -b html docs docs/_build/html
+        
+  performance:
+    name: Performance benchmarks
+    runs-on: ubuntu-latest
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.11'
+        
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install -e .
+        pip install pytest-benchmark
+        
+    # 为将来的性能测试预留
+    - name: Run benchmarks
+      run: |
+        echo "Performance benchmarks placeholder"
+        # python -m pytest tests/benchmarks/ --benchmark-json=benchmark.json
+
