@@ -27,29 +27,23 @@ class ElevatorBusController(ElevatorController):
         print("🚌 公交车式电梯算法初始化")
         print(f"   管理 {len(elevators)} 部电梯")
         print(f"   服务 {len(floors)} 层楼")
-
         # 获取最大楼层数
         self.max_floor = len(floors) - 1
-
         # 初始化每个电梯的方向 - 开始都向上
         for elevator in elevators:
             self.elevator_directions[elevator.id] = "up"
-
         # 简单的初始分布 - 均匀分散到不同楼层
         for i, elevator in enumerate(elevators):
             # 计算目标楼层 - 均匀分布在不同楼层
             target_floor = (i * (len(floors) - 1)) // len(elevators)
-
             # 立刻移动到目标位置并开始循环
             elevator.go_to_floor(target_floor, immediate=True)
-
-            print(f"   🚌 电梯{elevator.id} -> {target_floor}楼 (开始公交循环)")
 
     def on_event_execute_start(
         self, tick: int, events: List[SimulationEvent], elevators: List[ProxyElevator], floors: List[ProxyFloor]
     ) -> None:
         """事件执行前的回调"""
-        print(f"⏰ Tick {tick}: 即将处理 {len(events)} 个事件", end="")
+        print(f"Tick {tick}: 即将处理 {len(events)} 个事件 {[e.type for e in events]}", end="")
         for i in elevators:
             print(f"电梯{i.id}[{i.target_floor_direction.value}] 位置{i.current_floor_float}/{i.target_floor}, ", end="")
         print()
@@ -71,25 +65,40 @@ class ElevatorBusController(ElevatorController):
     def on_elevator_idle(self, elevator: ProxyElevator) -> None:
         """
         电梯空闲时的回调
-        让空闲的电梯继续执行公交车循环路线
+        让空闲的电梯继续执行公交车循环路线，每次移动一层楼
         """
-        print(f"⏸️ 电梯 {elevator.id} 空闲，继续公交循环")
-
-    def on_elevator_stopped(self, elevator: ProxyElevator, floor: ProxyFloor) -> None:
-        """
-        电梯停靠时的回调
-        公交车模式下，在每一层都停下，然后继续下一站
-        """
-        print(f"🛑 电梯 {elevator.id} 停靠在 {floor.floor} 楼")
-
+        print(f"🛑 电梯 {elevator.id} 空闲 {elevator.current_floor} = {elevator.target_floor}")
         # 设置指示器让乘客知道电梯的行进方向
-        current_direction = self.elevator_directions.get(elevator.id, "up")
+        if self.elevator_directions[elevator.id] == "down" and elevator.current_floor != 0:
+            elevator.go_to_floor(elevator.current_floor - 1, immediate=True)
+        current_direction = self.elevator_directions[elevator.id]
         if current_direction == "up":
             elevator.set_up_indicator(True)
             elevator.set_down_indicator(False)
         else:
             elevator.set_up_indicator(False)
             elevator.set_down_indicator(True)
+
+    def on_elevator_stopped(self, elevator: ProxyElevator, floor: ProxyFloor) -> None:
+        """
+        电梯停靠时的回调
+        公交车模式下，在每一层都停下，然后继续下一站
+        需要注意的是，stopped会比idle先触发
+        """
+        print(f"🛑 电梯 {elevator.id} 停靠在 {floor.floor} 楼")
+        if self.elevator_directions[elevator.id] == "up" and elevator.current_floor == self.max_floor:
+            elevator.go_to_floor(elevator.current_floor - 1, immediate=True)
+            self.elevator_directions[elevator.id] = "down"
+        elif self.elevator_directions[elevator.id] == "down" and elevator.current_floor == 0:
+            elevator.go_to_floor(elevator.current_floor + 1, immediate=True)
+            self.elevator_directions[elevator.id] = "up"
+        elif self.elevator_directions[elevator.id] == "up":
+            elevator.go_to_floor(elevator.current_floor + 1, immediate=True)
+        # 这里故意少写下降的情况，用于了解stopped会先于idle触发
+        # elif self.elevator_directions[elevator.id] == "down":
+        #     elevator.go_to_floor(elevator.current_floor - 1, immediate=True)
+        #     self.elevator_directions[elevator.id] = "down"
+
 
     def on_passenger_board(self, elevator: ProxyElevator, passenger: ProxyPassenger) -> None:
         """

@@ -221,25 +221,6 @@ class ElevatorAPIClient:
             debug_log(f"Get traffic info failed: {e}")
             return None
 
-    def force_complete_remaining_passengers(self) -> Optional[int]:
-        """强制完成所有未完成的乘客，返回完成的乘客数量"""
-        try:
-            response_data = self._send_post_request("/api/force_complete", {})
-            if response_data.get("success"):
-                completed_count = response_data.get("completed_count", 0)
-                debug_log(f"Force completed {completed_count} passengers")
-                # 强制完成后清空缓存
-                self._cached_state = None
-                self._cached_tick = -1
-                self._tick_processed = False
-                return completed_count
-            else:
-                debug_log(f"Force complete failed: {response_data.get('error')}")
-                return None
-        except Exception as e:
-            debug_log(f"Force complete failed: {e}")
-            return None
-
     def _send_post_request(self, endpoint: str, data: Dict[str, Any]) -> Dict[str, Any]:
         """发送POST请求"""
         url = f"{self.base_url}{endpoint}"

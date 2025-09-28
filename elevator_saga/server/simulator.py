@@ -127,7 +127,6 @@ class ElevatorSimulation:
     traffic_queue: List[TrafficEntry]
     next_passenger_id: int
     max_duration_ticks: int
-    _force_completed: bool
 
     def __init__(self, traffic_dir: str, _init_only: bool = False):
         if _init_only:
@@ -137,7 +136,6 @@ class ElevatorSimulation:
         self.current_traffic_index = 0
         self.traffic_files: List[Path] = []
         self.state: SimulationState = create_empty_simulation_state(2, 1, 1)
-        self._force_completed = False
         self._load_traffic_files()
 
     @property
@@ -195,7 +193,6 @@ class ElevatorSimulation:
             )
             self.reset()
             self.max_duration_ticks = building_config["duration"]
-            self._force_completed = False  # 重置强制完成标志
             traffic_data: list[Dict[str, Any]] = file_data["traffic"]
             traffic_data.sort(key=lambda t: cast(int, t["tick"]))
             for entry in traffic_data:
@@ -291,19 +288,14 @@ class ElevatorSimulation:
             new_events: List[SimulationEvent] = []
             for i in range(num_ticks):
                 self.state.tick += 1
-                server_debug_log(f"Processing tick {self.tick} (step {i+1}/{num_ticks})")
+                # server_debug_log(f"Processing tick {self.tick} (step {i+1}/{num_ticks})")  # currently one tick per step
                 tick_events = self._process_tick()
                 new_events.extend(tick_events)
-                server_debug_log(f"Tick {self.tick} completed - Generated {len(tick_events)} events")
+                # server_debug_log(f"Tick {self.tick} completed - Generated {len(tick_events)} events")  # currently one tick per step
 
-                # 如果到达最大时长且尚未强制完成，强制完成剩余乘客
-                if (
-                    hasattr(self, "max_duration_ticks")
-                    and self.tick >= self.max_duration_ticks
-                    and not self._force_completed
-                ):
+                # 如果到达最大时长，强制完成剩余乘客
+                if self.tick >= self.max_duration_ticks:
                     completed_count = self.force_complete_remaining_passengers()
-                    self._force_completed = True
                     if completed_count > 0:
                         server_debug_log(f"模拟结束，强制完成了 {completed_count} 个乘客")
 
@@ -601,55 +593,11 @@ class ElevatorSimulation:
         with self.lock:
             completed_count = 0
             current_tick = self.tick
-
-            server_debug_log(f"强制完成未完成乘客，当前tick: {current_tick}")
-
-            # 收集需要强制完成的乘客ID（使用set提高查找效率）
-            passengers_to_complete = set()
-            for passenger_id, passenger in self.state.passengers.items():
+            for passenger in self.state.passengers.values():
                 if passenger.dropoff_tick == 0:
-                    passengers_to_complete.add(passenger_id)
-
-            server_debug_log(f"找到 {len(passengers_to_complete)} 个需要强制完成的乘客")
-
-            # 批量处理：先从电梯中移除所有需要完成的乘客
-            for elevator in self.elevators:
-                # 使用列表推导式创建新的乘客列表，避免多次remove操作
-                original_count = len(elevator.passengers)
-                elevator.passengers = [pid for pid in elevator.passengers if pid not in passengers_to_complete]
-                removed_count = original_count - len(elevator.passengers)
-
-                # 清理乘客目的地映射
-                for passenger_id in passengers_to_complete:
-                    elevator.passenger_destinations.pop(passenger_id, None)
-
-                if removed_count > 0:
-                    server_debug_log(f"从电梯 {elevator.id} 移除了 {removed_count} 个强制完成的乘客")
-
-            # 批量处理：从楼层等待队列中移除乘客
-            for floor in self.floors:
-                # 优化队列清理
-                original_up = len(floor.up_queue)
-                original_down = len(floor.down_queue)
-
-                floor.up_queue = [pid for pid in floor.up_queue if pid not in passengers_to_complete]
-                floor.down_queue = [pid for pid in floor.down_queue if pid not in passengers_to_complete]
-
-                removed_up = original_up - len(floor.up_queue)
-                removed_down = original_down - len(floor.down_queue)
-
-                if removed_up > 0 or removed_down > 0:
-                    server_debug_log(
-                        f"从楼层 {floor.floor} 移除了 {removed_up}(上行) + {removed_down}(下行) 个等待乘客"
-                    )
-
-            # 最后设置乘客完成状态
-            for passenger_id in passengers_to_complete:
-                passenger = self.state.passengers[passenger_id]
-                passenger.dropoff_tick = current_tick
-                completed_count += 1
-
-            server_debug_log(f"强制完成了 {completed_count} 个乘客")
+                    passenger.dropoff_tick = current_tick
+                if passenger.pickup_tick == 0:
+                    passenger.pickup_tick = current_tick
             return completed_count
 
     def reset(self) -> None:
@@ -661,7 +609,6 @@ class ElevatorSimulation:
             self.traffic_queue: List[TrafficEntry] = []
             self.max_duration_ticks = 0
             self.next_passenger_id = 1
-            self._force_completed = False
 
 
 # Global simulation instance for Flask routes
@@ -759,16 +706,6 @@ def get_traffic_info() -> Response | tuple[Response, int]:
     try:
         info = simulation.get_traffic_info()
         return json_response(info)
-    except Exception as e:
-        return json_response({"error": str(e)}, 500)
-
-
-@app.route("/api/force_complete", methods=["POST"])
-def force_complete_passengers() -> Response | tuple[Response, int]:
-    """强制完成所有未完成的乘客"""
-    try:
-        completed_count = simulation.force_complete_remaining_passengers()
-        return json_response({"success": True, "completed_count": completed_count})
     except Exception as e:
         return json_response({"error": str(e)}, 500)
 
