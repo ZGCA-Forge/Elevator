@@ -52,6 +52,7 @@ class ElevatorBusController(ElevatorController):
         self, tick: int, events: List[SimulationEvent], elevators: List[ProxyElevator], floors: List[ProxyFloor]
     ) -> None:
         """事件执行后的回调"""
+        # print(f"✅ Tick {tick}: 已处理 {len(events)} 个事件")
         pass
 
     def on_passenger_call(self, passenger:ProxyPassenger, floor: ProxyFloor, direction: str) -> None:
@@ -94,8 +95,8 @@ class ElevatorBusController(ElevatorController):
             elevator.go_to_floor(elevator.current_floor + 1, immediate=True)
             self.elevator_directions[elevator.id] = "up"
         elif self.elevator_directions[elevator.id] == "up":
-            if elevator.id == 0:
-                raise ValueError("这里故意要求0号电梯不可能触发非两端停止，通过on_elevator_approaching实现")
+            # if elevator.id == 0:
+            #     raise ValueError("这里故意要求0号电梯不可能触发非两端停止，通过on_elevator_approaching实现")
             elevator.go_to_floor(elevator.current_floor + 1, immediate=True)
         # 这里故意少写下降的情况，用于了解stopped会先于idle触发
         # elif self.elevator_directions[elevator.id] == "down":
