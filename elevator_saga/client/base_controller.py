@@ -3,6 +3,8 @@
 Elevator Controller Base Class
 电梯调度基础控制器类 - 提供面向对象的算法开发接口
 """
+import os
+import time
 from abc import ABC, abstractmethod
 from pprint import pprint
 from typing import Any, Dict, List, Optional
@@ -34,9 +36,9 @@ class ElevatorController(ABC):
         self.debug = debug
         self.elevators: List[Any] = []
         self.floors: List[Any] = []
-        self.current_tick = -2
+        self.current_tick = 0
         self.is_running = False
-        self.current_traffic_max_tick: Optional[int] = None
+        self.current_traffic_max_tick: int = 0
 
         # 初始化API客户端
         self.api_client = ElevatorAPIClient(server_url)
@@ -91,7 +93,7 @@ class ElevatorController(ABC):
         print(f"停止 {self.__class__.__name__} 算法")
 
     @abstractmethod
-    def on_passenger_call(self, floor: ProxyFloor, direction: str):
+    def on_passenger_call(self, passenger: ProxyPassenger, floor: ProxyFloor, direction: str):
         """
         乘客呼叫时的回调 - 可选实现
 
@@ -125,7 +127,7 @@ class ElevatorController(ABC):
     @abstractmethod
     def on_passenger_board(self, elevator: ProxyElevator, passenger: ProxyPassenger):
         """
-        乘客上车时的回调 - 可选实现
+        乘客上梯时的回调 - 可选实现
 
         Args:
             elevator: 电梯代理对象
@@ -173,7 +175,7 @@ class ElevatorController(ABC):
         """内部初始化方法"""
         self.elevators = elevators
         self.floors = floors
-        self.current_tick = -2
+        self.current_tick = 0
 
         # 调用用户的初始化方法
         self.on_init(elevators, floors)
@@ -213,25 +215,37 @@ class ElevatorController(ABC):
     def _run_event_driven_simulation(self):
         """运行事件驱动的模拟"""
         try:
-            # 获取初始状态并初始化
-            state = self.api_client.get_state()
+            # 获取初始状态并初始化，默认从0开始
+            try:
+                state = self.api_client.get_state()
+            except ConnectionResetError as ex:
+                print(f"模拟器可能并没有开启，请检查模拟器是否启动 {self.api_client.base_url}")
+                os._exit(1)
+            if state.tick > 0:
+                print("模拟器可能已经开始了一次模拟，执行重置...")
+                self.api_client.reset()
+                time.sleep(0.3)
+                return self._run_event_driven_simulation()
             self._update_wrappers(state, init=True)
 
             # 获取当前流量文件的最大tick数
             self._update_traffic_info()
-            if self.current_tick >= self.current_traffic_max_tick:
-                return
+            if self.current_traffic_max_tick == 0:
+                print("模拟器接收到的最大tick时间为0，可能所有的测试案例已用完，请求重置...")
+                self.api_client.next_traffic_round(full_reset=True)
+                time.sleep(0.3)
+                return self._run_event_driven_simulation()
+            # if self.current_tick >= self.current_traffic_max_tick:
+            #     return
 
             self._internal_init(self.elevators, self.floors)
-
-            tick_count = 0
-
+            self.api_client.mark_tick_processed()
             while self.is_running:
                 # 检查是否达到最大tick数
-                if tick_count >= self.current_traffic_max_tick:
+                if self.current_tick >= self.current_traffic_max_tick:
                     break
 
-                # 执行一个tick的模拟
+                # 执行一个tick的模拟，从1开始
                 step_response = self.api_client.step(1)
                 # 更新当前状态
                 self.current_tick = step_response.tick
@@ -256,28 +270,21 @@ class ElevatorController(ABC):
 
                 # 事件执行后回调
                 self.on_event_execute_end(self.current_tick, events, self.elevators, self.floors)
-
                 # 标记tick处理完成，使API客户端缓存失效
                 self.api_client.mark_tick_processed()
-
-                tick_count += 1
-
                 # 检查是否需要切换流量文件
                 if self.current_tick >= self.current_traffic_max_tick:
                     pprint(state.metrics.to_dict())
                     if not self.api_client.next_traffic_round():
-                        # 如果没有更多流量文件，退出
                         break
-
                     # 重置并重新初始化
                     self._reset_and_reinit()
-                    tick_count = 0
 
         except Exception as e:
             print(f"模拟运行错误: {e}")
             raise
 
-    def _update_wrappers(self, state: SimulationState, init=False) -> None:
+    def _update_wrappers(self, state: SimulationState, init: bool = False) -> None:
         """更新电梯和楼层代理对象"""
         self.current_tick = state.tick
         # 检查电梯数量是否发生变化，只有变化时才重新创建
@@ -301,42 +308,46 @@ class ElevatorController(ABC):
                 debug_log(f"Updated traffic info - max_tick: {self.current_traffic_max_tick}")
             else:
                 debug_log("Failed to get traffic info")
-                self.current_traffic_max_tick = None
+                self.current_traffic_max_tick = 0
         except Exception as e:
             debug_log(f"Error updating traffic info: {e}")
-            self.current_traffic_max_tick = None
+            self.current_traffic_max_tick = 0
 
     def _handle_single_event(self, event: SimulationEvent):
         """处理单个事件"""
-        if event.type == EventType.UP_BUTTON_PRESSED.value:
-            floor_id = event.data.get("floor")
+        if event.type == EventType.UP_BUTTON_PRESSED:
+            floor_id = event.data["floor"]
+            passenger_id = event.data["passenger"]
             if floor_id is not None:
                 floor_proxy = ProxyFloor(floor_id, self.api_client)
-                self.on_passenger_call(floor_proxy, "up")
+                passenger_proxy = ProxyPassenger(passenger_id, self.api_client)
+                self.on_passenger_call(passenger_proxy, floor_proxy, "up")
 
-        elif event.type == EventType.DOWN_BUTTON_PRESSED.value:
-            floor_id = event.data.get("floor")
+        elif event.type == EventType.DOWN_BUTTON_PRESSED:
+            floor_id = event.data["floor"]
+            passenger_id = event.data["passenger"]
             if floor_id is not None:
                 floor_proxy = ProxyFloor(floor_id, self.api_client)
-                self.on_passenger_call(floor_proxy, "down")
+                passenger_proxy = ProxyPassenger(passenger_id, self.api_client)
+                self.on_passenger_call(passenger_proxy, floor_proxy, "down")
 
-        elif event.type == EventType.STOPPED_AT_FLOOR.value:
+        elif event.type == EventType.STOPPED_AT_FLOOR:
             elevator_id = event.data.get("elevator")
-            floor_id = event.data.get("floor")
+            floor_id = event.data["floor"]
             if elevator_id is not None and floor_id is not None:
                 elevator_proxy = ProxyElevator(elevator_id, self.api_client)
                 floor_proxy = ProxyFloor(floor_id, self.api_client)
                 self.on_elevator_stopped(elevator_proxy, floor_proxy)
 
-        elif event.type == EventType.IDLE.value:
+        elif event.type == EventType.IDLE:
             elevator_id = event.data.get("elevator")
             if elevator_id is not None:
                 elevator_proxy = ProxyElevator(elevator_id, self.api_client)
                 self.on_elevator_idle(elevator_proxy)
 
-        elif event.type == EventType.PASSING_FLOOR.value:
+        elif event.type == EventType.PASSING_FLOOR:
             elevator_id = event.data.get("elevator")
-            floor_id = event.data.get("floor")
+            floor_id = event.data["floor"]
             direction = event.data.get("direction")
             if elevator_id is not None and floor_id is not None and direction is not None:
                 elevator_proxy = ProxyElevator(elevator_id, self.api_client)
@@ -345,9 +356,9 @@ class ElevatorController(ABC):
                 direction_str = direction if isinstance(direction, str) else direction.value
                 self.on_elevator_passing_floor(elevator_proxy, floor_proxy, direction_str)
 
-        elif event.type == EventType.ELEVATOR_APPROACHING.value:
+        elif event.type == EventType.ELEVATOR_APPROACHING:
             elevator_id = event.data.get("elevator")
-            floor_id = event.data.get("floor")
+            floor_id = event.data["floor"]
             direction = event.data.get("direction")
             if elevator_id is not None and floor_id is not None and direction is not None:
                 elevator_proxy = ProxyElevator(elevator_id, self.api_client)
@@ -356,7 +367,7 @@ class ElevatorController(ABC):
                 direction_str = direction if isinstance(direction, str) else direction.value
                 self.on_elevator_approaching(elevator_proxy, floor_proxy, direction_str)
 
-        elif event.type == EventType.PASSENGER_BOARD.value:
+        elif event.type == EventType.PASSENGER_BOARD:
             elevator_id = event.data.get("elevator")
             passenger_id = event.data.get("passenger")
             if elevator_id is not None and passenger_id is not None:
@@ -364,10 +375,10 @@ class ElevatorController(ABC):
                 passenger_proxy = ProxyPassenger(passenger_id, self.api_client)
                 self.on_passenger_board(elevator_proxy, passenger_proxy)
 
-        elif event.type == EventType.PASSENGER_ALIGHT.value:
+        elif event.type == EventType.PASSENGER_ALIGHT:
             elevator_id = event.data.get("elevator")
             passenger_id = event.data.get("passenger")
-            floor_id = event.data.get("floor")
+            floor_id = event.data["floor"]
             if elevator_id is not None and passenger_id is not None and floor_id is not None:
                 elevator_proxy = ProxyElevator(elevator_id, self.api_client)
                 passenger_proxy = ProxyPassenger(passenger_id, self.api_client)
@@ -379,7 +390,7 @@ class ElevatorController(ABC):
         try:
             # 重置服务器状态
             self.api_client.reset()
-
+            self.current_tick = 0
             # 获取新的初始状态
             state = self.api_client.get_state()
             self._update_wrappers(state)

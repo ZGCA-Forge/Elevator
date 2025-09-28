@@ -7,14 +7,14 @@
     "scale": "large",
     "description": "楼层间流量 - 适合小建筑 (large规模)",
     "expected_passengers": 76,
-    "duration": 300
+    "duration": 100
   },
   "traffic": [
     {
       "id": 1,
-      "origin": 3,
-      "destination": 8,
-      "tick": 7
+      "origin": 0,
+      "destination": 1,
+      "tick": 1
     },
     {
       "id": 2,

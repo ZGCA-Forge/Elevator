@@ -33,13 +33,15 @@ class PassengerStatus(Enum):
 
 class ElevatorStatus(Enum):  # OK
     """
-    电梯stopped -1tick> (回调启动) start_up -1tick> constant_speed -?tick> start_down -1tick> 结束
+    电梯运行状态机：stopped -1tick> start_up -1tick> constant_speed -?tick> start_down -1tick> stopped
+    注意：START_UP/START_DOWN表示加速/减速状态，不表示移动方向
+    实际移动方向由target_floor_direction属性决定
     """
 
-    START_UP = "start_up"  # 即将启动，tick结束时会从stopped转换成start_up
-    START_DOWN = "start_down"  # 即将到站，tick结束时会触发may passing floor
-    CONSTANT_SPEED = "constant_speed"
-    STOPPED = "stopped"
+    START_UP = "start_up"  # 启动加速状态（不表示向上方向）
+    START_DOWN = "start_down"  # 减速状态（不表示向下方向）
+    CONSTANT_SPEED = "constant_speed"  # 匀速状态
+    STOPPED = "stopped"  # 停止状态
 
 
 class EventType(Enum):
@@ -49,7 +51,7 @@ class EventType(Enum):
     DOWN_BUTTON_PRESSED = "down_button_pressed"
     PASSING_FLOOR = "passing_floor"
     STOPPED_AT_FLOOR = "stopped_at_floor"
-    ELEVATOR_APPROACHING = "elevator_approaching"  # 电梯即将到达（START_DOWN状态）
+    ELEVATOR_APPROACHING = "elevator_approaching"  # 电梯即将经过某层楼（START_DOWN状态）
     IDLE = "idle"
     PASSENGER_BOARD = "passenger_board"
     PASSENGER_ALIGHT = "passenger_alight"
@@ -117,7 +119,7 @@ class Position(SerializableModel):
             self.floor_up_position -= 10
 
         # 处理向下楼层跨越
-        while self.floor_up_position < 0:
+        while self.floor_up_position <= -10:
             self.current_floor -= 1
             self.floor_up_position += 10
 
@@ -260,28 +262,9 @@ class ElevatorState(SerializableModel):
         """按下的楼层（基于当前乘客的目的地动态计算）"""
         return sorted(list(set(self.passenger_destinations.values())))
 
-    def add_destination(self, floor: int, immediate: bool = False):
-        """添加目标楼层"""
-        self.next_target_floor = floor
-
     def clear_destinations(self):
         """清空目标队列"""
         self.next_target_floor = None
-
-    def add_passenger(self, passenger_id: int, destination_floor: int):
-        """添加乘客"""
-        if not self.is_full:
-            self.passengers.append(passenger_id)
-            self.passenger_destinations[passenger_id] = destination_floor
-            return True
-        return False
-
-    def remove_passenger(self, passenger_id: int, floor: int):
-        """移除乘客"""
-        if passenger_id in self.passengers:
-            self.passengers.remove(passenger_id)
-            # 从乘客目的地映射中移除
-            self.passenger_destinations.pop(passenger_id, None)
 
 
 @dataclass
@@ -346,10 +329,7 @@ class PerformanceMetrics(SerializableModel):
     p95_wait_time: float = 0.0
     average_system_time: float = 0.0
     p95_system_time: float = 0.0
-    total_energy_consumption: float = 0.0
-    total_movement_distance: float = 0.0
-    total_stops: int = 0
-    efficiency_score: float = 0.0
+    # total_energy_consumption: float = 0.0
 
     @property
     def completion_rate(self) -> float:
@@ -358,12 +338,12 @@ class PerformanceMetrics(SerializableModel):
             return 0.0
         return self.completed_passengers / self.total_passengers
 
-    @property
-    def energy_per_passenger(self) -> float:
-        """每位乘客能耗"""
-        if self.completed_passengers == 0:
-            return 0.0
-        return self.total_energy_consumption / self.completed_passengers
+    # @property
+    # def energy_per_passenger(self) -> float:
+    #     """每位乘客能耗"""
+    #     if self.completed_passengers == 0:
+    #         return 0.0
+    #     return self.total_energy_consumption / self.completed_passengers
 
 
 @dataclass

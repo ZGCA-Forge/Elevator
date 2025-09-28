@@ -72,7 +72,7 @@ class ElevatorAPIClient:
                     p95_wait_time=metrics_data.get("p95_wait", 0),
                     average_system_time=metrics_data.get("avg_system", 0),
                     p95_system_time=metrics_data.get("p95_system", 0),
-                    total_energy_consumption=metrics_data.get("energy_total", 0),
+                    # total_energy_consumption=metrics_data.get("energy_total", 0),
                 )
             else:
                 metrics = PerformanceMetrics()
@@ -106,7 +106,20 @@ class ElevatorAPIClient:
         if "error" not in response_data:
             # 使用服务端返回的真实数据
             events_data = response_data.get("events", [])
-            events = [SimulationEvent.from_dict(event) for event in events_data]
+            events = []
+            for event_data in events_data:
+                # 手动转换type字段从字符串到EventType枚举
+                event_dict = event_data.copy()
+                if "type" in event_dict and isinstance(event_dict["type"], str):
+                    # 尝试将字符串转换为EventType枚举
+                    try:
+                        from elevator_saga.core.models import EventType
+
+                        event_dict["type"] = EventType(event_dict["type"])
+                    except ValueError:
+                        debug_log(f"Unknown event type: {event_dict['type']}")
+                        continue
+                events.append(SimulationEvent.from_dict(event_dict))
 
             step_response = StepResponse(
                 success=True,
@@ -122,7 +135,7 @@ class ElevatorAPIClient:
     def send_elevator_command(self, command: Union[GoToFloorCommand, SetIndicatorsCommand]) -> bool:
         """发送电梯命令"""
         endpoint = self._get_elevator_endpoint(command)
-        debug_log(f"Sending elevator command: {command.command_type} to elevator {command.elevator_id}")
+        debug_log(f"Sending elevator command: {command.command_type} to elevator {command.elevator_id} To:F{command.floor}")
 
         response_data = self._send_post_request(endpoint, command.parameters)
 
@@ -191,10 +204,10 @@ class ElevatorAPIClient:
             debug_log(f"Reset failed: {e}")
             return False
 
-    def next_traffic_round(self) -> bool:
+    def next_traffic_round(self, full_reset = False) -> bool:
         """切换到下一个流量文件"""
         try:
-            response_data = self._send_post_request("/api/traffic/next", {})
+            response_data = self._send_post_request("/api/traffic/next", {"full_reset": full_reset})
             success = response_data.get("success", False)
             if success:
                 # 清空缓存，因为流量文件已切换，状态会改变
@@ -211,7 +224,6 @@ class ElevatorAPIClient:
         """获取当前流量文件信息"""
         try:
             response_data = self._send_get_request("/api/traffic/info")
-            debug_log(str())
             if "error" not in response_data:
                 return response_data
             else:
@@ -231,7 +243,7 @@ class ElevatorAPIClient:
         req = urllib.request.Request(url, data=request_body, headers={"Content-Type": "application/json"})
 
         try:
-            with urllib.request.urlopen(req, timeout=60) as response:
+            with urllib.request.urlopen(req, timeout=600) as response:
                 response_data = json.loads(response.read().decode("utf-8"))
                 # debug_log(f"POST {url} -> {response.status}")
                 return response_data
