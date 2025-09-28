@@ -186,7 +186,7 @@ class ElevatorSimulation:
         traffic_file = self.traffic_files[self.current_traffic_index]
         server_debug_log(f"Loading traffic from {traffic_file.name}")
         try:
-            with open(traffic_file, "r") as f:
+            with open(traffic_file, "r", encoding="utf-8")as f:
                 file_data = json.load(f)
             building_config = file_data["building"]
             server_debug_log(f"Building config: {building_config}")

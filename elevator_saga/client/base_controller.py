@@ -34,7 +34,7 @@ class ElevatorController(ABC):
         self.debug = debug
         self.elevators: List[Any] = []
         self.floors: List[Any] = []
-        self.current_tick = 0
+        self.current_tick = -2
         self.is_running = False
         self.current_traffic_max_tick: Optional[int] = None
 
@@ -173,7 +173,7 @@ class ElevatorController(ABC):
         """内部初始化方法"""
         self.elevators = elevators
         self.floors = floors
-        self.current_tick = 0
+        self.current_tick = -2
 
         # 调用用户的初始化方法
         self.on_init(elevators, floors)

@@ -36,7 +36,8 @@ setup(
         "numpy>=1.20.0",
         "matplotlib>=3.5.0",
         "seaborn>=0.11.0",
-        "pandas>=1.3.0",
+        "pandas>=1.3.0",,
+        "flask
     ],
     extras_require={
         "dev": [
