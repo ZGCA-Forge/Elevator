@@ -1,0 +1,12 @@
+include README_CN.md
+include setup.py
+include MANIFEST.in
+include elevator_saga/py.typed
+recursive-include elevator_saga *.py
+recursive-include elevator_saga *.json
+recursive-include elevator_saga *.md
+exclude test_package.py
+exclude *.pyc
+exclude elevator_saga/__pycache__/*
+global-exclude __pycache__
+global-exclude *.py[co]

@@ -1,0 +1,46 @@
+{
+    // —— 入口/排除 ——（按你项目结构来）
+    "include": ["."],
+    "exclude": [
+      "build",
+      "dist",
+      "__pycache__",
+      ".mypy_cache",
+      ".pytest_cache",
+      "htmlcov",
+      ".idea",
+      ".vscode",
+      "docs/_build",
+      "dypymcp.egg-info",
+      ".venv_mcp",
+      "logs",
+      "environments",
+      "models"
+    ],
+  
+    // —— 语言/环境设置 ——
+    "pythonVersion": "3.10",
+    "typeCheckingMode": "strict",
+  
+    // 你的源码在仓库内的额外搜索路径（等价于以前 Pylance 的 include）
+    "executionEnvironments": [
+      {
+        "root": ".",
+        "extraPaths": ["dypymcp"]
+      }
+    ],
+  
+    // —— 与你原 mypy/flake8 诉求相匹配的诊断级别 —— 
+    // 忽略三方包的缺失导入（等价于 mypy 的 --ignore-missing-imports）
+    "reportMissingImports": "none",
+    // 可按需放宽/收紧：
+    "reportUnusedImport": "warning",
+    "reportUnusedVariable": "warning",
+    "reportUnknownArgumentType": "warning",
+    "reportUnknownMemberType": "warning",
+    "reportUnknownVariableType": "warning",
+    "reportUnknownParameterType": "warning",
+    "reportPrivateUsage": "warning",
+    "reportMissingTypeStubs": false
+  }
+  
