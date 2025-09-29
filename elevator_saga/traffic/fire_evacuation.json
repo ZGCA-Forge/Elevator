@@ -1,0 +1,182 @@
+{
+  "building": {
+    "floors": 6,
+    "elevators": 2,
+    "elevator_capacity": 8,
+    "scenario": "fire_evacuation",
+    "scale": "medium",
+    "description": "火警疏散 - 紧急疏散到大厅 (medium规模)",
+    "expected_passengers": 28,
+    "duration": 200
+  },
+  "traffic": [
+    {
+      "id": 1,
+      "origin": 3,
+      "destination": 5,
+      "tick": 10
+    },
+    {
+      "id": 2,
+      "origin": 5,
+      "destination": 1,
+      "tick": 14
+    },
+    {
+      "id": 3,
+      "origin": 0,
+      "destination": 1,
+      "tick": 22
+    },
+    {
+      "id": 4,
+      "origin": 4,
+      "destination": 2,
+      "tick": 29
+    },
+    {
+      "id": 5,
+      "origin": 2,
+      "destination": 1,
+      "tick": 30
+    },
+    {
+      "id": 6,
+      "origin": 5,
+      "destination": 2,
+      "tick": 32
+    },
+    {
+      "id": 7,
+      "origin": 2,
+      "destination": 5,
+      "tick": 41
+    },
+    {
+      "id": 8,
+      "origin": 0,
+      "destination": 1,
+      "tick": 51
+    },
+    {
+      "id": 9,
+      "origin": 1,
+      "destination": 0,
+      "tick": 68
+    },
+    {
+      "id": 10,
+      "origin": 1,
+      "destination": 0,
+      "tick": 71
+    },
+    {
+      "id": 11,
+      "origin": 1,
+      "destination": 0,
+      "tick": 73
+    },
+    {
+      "id": 12,
+      "origin": 1,
+      "destination": 0,
+      "tick": 68
+    },
+    {
+      "id": 13,
+      "origin": 1,
+      "destination": 0,
+      "tick": 73
+    },
+    {
+      "id": 14,
+      "origin": 2,
+      "destination": 0,
+      "tick": 76
+    },
+    {
+      "id": 15,
+      "origin": 2,
+      "destination": 0,
+      "tick": 69
+    },
+    {
+      "id": 16,
+      "origin": 2,
+      "destination": 0,
+      "tick": 72
+    },
+    {
+      "id": 17,
+      "origin": 2,
+      "destination": 0,
+      "tick": 76
+    },
+    {
+      "id": 18,
+      "origin": 3,
+      "destination": 0,
+      "tick": 76
+    },
+    {
+      "id": 19,
+      "origin": 3,
+      "destination": 0,
+      "tick": 75
+    },
+    {
+      "id": 20,
+      "origin": 3,
+      "destination": 0,
+      "tick": 66
+    },
+    {
+      "id": 21,
+      "origin": 4,
+      "destination": 0,
+      "tick": 66
+    },
+    {
+      "id": 22,
+      "origin": 4,
+      "destination": 0,
+      "tick": 75
+    },
+    {
+      "id": 23,
+      "origin": 4,
+      "destination": 0,
+      "tick": 72
+    },
+    {
+      "id": 24,
+      "origin": 4,
+      "destination": 0,
+      "tick": 74
+    },
+    {
+      "id": 25,
+      "origin": 5,
+      "destination": 0,
+      "tick": 74
+    },
+    {
+      "id": 26,
+      "origin": 5,
+      "destination": 0,
+      "tick": 70
+    },
+    {
+      "id": 27,
+      "origin": 5,
+      "destination": 0,
+      "tick": 72
+    },
+    {
+      "id": 28,
+      "origin": 5,
+      "destination": 0,
+      "tick": 74
+    }
+  ]
+}

@@ -14,7 +14,6 @@ from elevator_saga.core.models import (
     GoToFloorCommand,
     PassengerInfo,
     PerformanceMetrics,
-    SetIndicatorsCommand,
     SimulationEvent,
     SimulationState,
     StepResponse,
@@ -132,7 +131,7 @@ class ElevatorAPIClient:
         else:
             raise RuntimeError(f"Step failed: {response_data.get('error')}")
 
-    def send_elevator_command(self, command: Union[GoToFloorCommand, SetIndicatorsCommand]) -> bool:
+    def send_elevator_command(self, command: Union[GoToFloorCommand]) -> bool:
         """发送电梯命令"""
         endpoint = self._get_elevator_endpoint(command)
         debug_log(f"Sending elevator command: {command.command_type} to elevator {command.elevator_id} To:F{command.floor}")
@@ -155,25 +154,12 @@ class ElevatorAPIClient:
             debug_log(f"Go to floor failed: {e}")
             return False
 
-    def set_indicators(self, elevator_id: int, up: Optional[bool] = None, down: Optional[bool] = None) -> bool:
-        """设置电梯指示灯"""
-        command = SetIndicatorsCommand(elevator_id=elevator_id, up=up, down=down)
-
-        try:
-            response = self.send_elevator_command(command)
-            return response
-        except Exception as e:
-            debug_log(f"Set indicators failed: {e}")
-            return False
-
-    def _get_elevator_endpoint(self, command: Union[GoToFloorCommand, SetIndicatorsCommand]) -> str:
+    def _get_elevator_endpoint(self, command: Union[GoToFloorCommand]) -> str:
         """获取电梯命令端点"""
         base = f"/api/elevators/{command.elevator_id}"
 
         if isinstance(command, GoToFloorCommand):
             return f"{base}/go_to_floor"
-        else:  # SetIndicatorsCommand
-            return f"{base}/set_indicators"
 
     def _send_get_request(self, endpoint: str) -> Dict[str, Any]:
         """发送GET请求"""

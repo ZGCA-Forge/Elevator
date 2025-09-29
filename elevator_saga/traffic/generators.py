@@ -806,7 +806,7 @@ def generate_traffic_file(scenario: str, output_file: str, scale: Optional[str] 
     complete_data = {"building": building_config, "traffic": traffic_data}
 
     # 写入文件
-    with open(output_file, "w") as f:
+    with open(output_file, "w", encoding="utf-8") as f:
         json.dump(complete_data, f, indent=2, ensure_ascii=False)
 
     print(f"Generated {len(traffic_data)} passengers for scenario '{scenario}' ({scale}) -> {output_file}")

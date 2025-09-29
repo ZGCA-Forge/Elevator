@@ -18,26 +18,22 @@ setup(
     classifiers=[
         "Development Status :: 4 - Beta",
         "Intended Audience :: Developers",
-        "Intended Audience :: Education", 
+        "Intended Audience :: Education",
         "License :: OSI Approved :: MIT License",
         "Operating System :: OS Independent",
         "Programming Language :: Python :: 3",
-        "Programming Language :: Python :: 3.8",
-        "Programming Language :: Python :: 3.9",
-        "Programming Language :: Python :: 3.10",
-        "Programming Language :: Python :: 3.11",
         "Programming Language :: Python :: 3.12",
         "Topic :: Games/Entertainment :: Simulation",
         "Topic :: Software Development :: Libraries :: Python Modules",
     ],
-    python_requires=">=3.8",
+    python_requires=">=3.12",
     install_requires=[
         "pyee>=11.0.0",
         "numpy>=1.20.0",
         "matplotlib>=3.5.0",
         "seaborn>=0.11.0",
         "pandas>=1.3.0",
-        "flask"
+        "flask",
     ],
     extras_require={
         "dev": [
@@ -45,6 +41,8 @@ setup(
             "pytest-cov",
             "black",
             "flake8",
+            "isort",
+            "mypy",
         ],
     },
     entry_points={

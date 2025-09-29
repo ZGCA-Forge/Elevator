@@ -16,8 +16,8 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-latest, windows-latest, macos-latest]
-        python-version: ['3.8', '3.9', '3.10', '3.11', '3.12']
+        os: [ubuntu-latest]
+        python-version: ['3.12']
         
     steps:
     - uses: actions/checkout@v4
@@ -31,14 +31,14 @@ jobs:
       uses: actions/cache@v3
       with:
         path: ~/.cache/pip
-        key: ${{ runner.os }}-pip-${{ hashFiles('**/pyproject.toml') }}
+        key: ${{ runner.os }}-pip-${{ hashFiles('**/pyproject.toml', '**/setup.py') }}
         restore-keys: |
           ${{ runner.os }}-pip-
           
     - name: Install dependencies
       run: |
         python -m pip install --upgrade pip
-        pip install -e .
+        pip install -e .[dev]
         
     - name: Check dependencies
       run: |
@@ -46,19 +46,19 @@ jobs:
         
     - name: Run linting
       run: |
-        black --check msgcenterpy tests
-        isort --check-only msgcenterpy tests
+        black --check elevator_saga tests
+        isort --check-only elevator_saga tests
         
     - name: Run type checking
       run: |
-        mypy msgcenterpy
+        mypy elevator_saga
         
     - name: Run tests with coverage
       run: |
-        python -m pytest --cov=msgcenterpy --cov-report=xml --cov-report=term-missing
+        python -m pytest --cov=elevator_saga --cov-report=xml --cov-report=term-missing
         
     - name: Upload coverage to Codecov
-      if: matrix.python-version == '3.11' && matrix.os == 'ubuntu-latest'
+      if: matrix.python-version == '3.12' && matrix.os == 'ubuntu-latest'
       uses: codecov/codecov-action@v3
       with:
         file: ./coverage.xml
@@ -66,43 +66,26 @@ jobs:
         name: codecov-umbrella
         fail_ci_if_error: false
 
-  test-with-ros2:
-    name: Test with ROS2 (Ubuntu)
+  test-examples:
+    name: Test examples
     runs-on: ubuntu-latest
-    container:
-      image: ros:humble
-      
+    
     steps:
     - uses: actions/checkout@v4
     
     - name: Set up Python
-      run: |
-        apt-get update
-        apt-get install -y python3-pip python3-dev
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.12'
         
-    - name: Install ROS2 dependencies
+    - name: Install dependencies
       run: |
-        apt-get update
-        apt-get install -y \
-          python3-rosidl-runtime-py \
-          python3-rclpy \
-          ros-humble-std-msgs \
-          ros-humble-geometry-msgs
-          
-    - name: Install package
-      run: |
-        python3 -m pip install --upgrade pip
-        pip3 install -e .[dev,ros2]
+        python -m pip install --upgrade pip
+        pip install -e .[dev]
         
-    - name: Run ROS2 tests
+    - name: Run example tests
       run: |
-        . /opt/ros/humble/setup.sh
-        python3 run_all_tests.py --type ros2
-        
-    - name: Run conversion tests
-      run: |
-        . /opt/ros/humble/setup.sh
-        python3 run_all_tests.py --type conversion
+        python run_all_tests.py --type examples
 
   build:
     name: Build and check package
@@ -114,7 +97,7 @@ jobs:
     - name: Set up Python
       uses: actions/setup-python@v4
       with:
-        python-version: '3.11'
+        python-version: '3.12'
         
     - name: Install build dependencies
       run: |
@@ -146,7 +129,7 @@ jobs:
     - name: Set up Python
       uses: actions/setup-python@v4
       with:
-        python-version: '3.11'
+        python-version: '3.12'
         
     - name: Install security tools
       run: |
@@ -154,7 +137,7 @@ jobs:
         pip install bandit safety
         
     - name: Run bandit security scan
-      run: bandit -r msgcenterpy/ -f json -o bandit-report.json
+      run: bandit -r elevator_saga/ -f json -o bandit-report.json
       continue-on-error: true
       
     - name: Run safety security scan
@@ -180,12 +163,12 @@ jobs:
     - name: Set up Python
       uses: actions/setup-python@v4
       with:
-        python-version: '3.11'
+        python-version: '3.12'
         
     - name: Install dependencies
       run: |
         python -m pip install --upgrade pip
-        pip install -e .[docs]
+        pip install -e .[dev][docs]
         
     # 为将来的文档构建预留
     - name: Check documentation
@@ -204,12 +187,12 @@ jobs:
     - name: Set up Python
       uses: actions/setup-python@v4
       with:
-        python-version: '3.11'
+        python-version: '3.12'
         
     - name: Install dependencies
       run: |
         python -m pip install --upgrade pip
-        pip install -e .
+        pip install -e .[dev]
         pip install pytest-benchmark
         
     # 为将来的性能测试预留

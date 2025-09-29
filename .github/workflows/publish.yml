@@ -22,7 +22,7 @@ jobs:
     - name: Set up Python
       uses: actions/setup-python@v4
       with:
-        python-version: '3.11'
+        python-version: '3.12'
         
     # - name: Install dependencies
     #   run: |
@@ -50,7 +50,7 @@ jobs:
     - name: Set up Python
       uses: actions/setup-python@v4
       with:
-        python-version: '3.11'
+        python-version: '3.12'
         
     # - name: Install build dependencies
     #   run: |
@@ -60,7 +60,7 @@ jobs:
     # - name: Verify version consistency
     #   run: |
     #     # 检查版本号一致性
-    #     VERSION=$(python -c "import msgcenterpy; print(msgcenterpy.__version__)" 2>/dev/null || echo "unknown")
+    #     VERSION=$(python -c "import elevator_saga; print(elevator_saga.__version__)" 2>/dev/null || echo "unknown")
     #     TAG_VERSION="${GITHUB_REF#refs/tags/v}"
     #     if [ "$GITHUB_EVENT_NAME" = "release" ]; then
     #       if [ "$VERSION" != "$TAG_VERSION" ]; then
@@ -72,6 +72,11 @@ jobs:
     # - name: Check manifest
     #   run: check-manifest
       
+    - name: Install build dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install build twine check-manifest
+        
     - name: Build package
       run: |
         python -m build
@@ -94,7 +99,7 @@ jobs:
     if: github.event.inputs.test_pypi == 'true' || (github.event_name == 'release' && github.event.release.prerelease)
     environment:
       name: test-pypi
-      url: https://test.pypi.org/p/elevator-py
+      url: https://test.pypi.org/p/elevator-saga
       
     steps:
     - name: Download build artifacts
@@ -117,7 +122,7 @@ jobs:
     if: github.event_name == 'release' && !github.event.release.prerelease && github.event.inputs.test_pypi != 'true'
     environment:
       name: pypi
-      url: https://pypi.org/p/elevator-py
+      url: https://pypi.org/p/elevator-saga
       
     steps:
     - name: Download build artifacts

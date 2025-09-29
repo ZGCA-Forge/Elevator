@@ -1,0 +1,410 @@
+{
+  "building": {
+    "floors": 6,
+    "elevators": 2,
+    "elevator_capacity": 8,
+    "scenario": "high_density",
+    "scale": "medium",
+    "description": "高密度流量 - 压力测试 (medium规模)",
+    "expected_passengers": 66,
+    "duration": 200
+  },
+  "traffic": [
+    {
+      "id": 1,
+      "origin": 4,
+      "destination": 0,
+      "tick": 1
+    },
+    {
+      "id": 2,
+      "origin": 4,
+      "destination": 2,
+      "tick": 2
+    },
+    {
+      "id": 3,
+      "origin": 4,
+      "destination": 3,
+      "tick": 3
+    },
+    {
+      "id": 4,
+      "origin": 0,
+      "destination": 4,
+      "tick": 4
+    },
+    {
+      "id": 5,
+      "origin": 5,
+      "destination": 0,
+      "tick": 14
+    },
+    {
+      "id": 6,
+      "origin": 1,
+      "destination": 3,
+      "tick": 18
+    },
+    {
+      "id": 7,
+      "origin": 2,
+      "destination": 3,
+      "tick": 19
+    },
+    {
+      "id": 8,
+      "origin": 5,
+      "destination": 2,
+      "tick": 20
+    },
+    {
+      "id": 9,
+      "origin": 0,
+      "destination": 2,
+      "tick": 21
+    },
+    {
+      "id": 10,
+      "origin": 2,
+      "destination": 3,
+      "tick": 22
+    },
+    {
+      "id": 11,
+      "origin": 2,
+      "destination": 4,
+      "tick": 23
+    },
+    {
+      "id": 12,
+      "origin": 2,
+      "destination": 4,
+      "tick": 25
+    },
+    {
+      "id": 13,
+      "origin": 3,
+      "destination": 4,
+      "tick": 30
+    },
+    {
+      "id": 14,
+      "origin": 3,
+      "destination": 4,
+      "tick": 32
+    },
+    {
+      "id": 15,
+      "origin": 4,
+      "destination": 1,
+      "tick": 34
+    },
+    {
+      "id": 16,
+      "origin": 2,
+      "destination": 3,
+      "tick": 35
+    },
+    {
+      "id": 17,
+      "origin": 5,
+      "destination": 0,
+      "tick": 36
+    },
+    {
+      "id": 18,
+      "origin": 1,
+      "destination": 2,
+      "tick": 38
+    },
+    {
+      "id": 19,
+      "origin": 0,
+      "destination": 4,
+      "tick": 40
+    },
+    {
+      "id": 20,
+      "origin": 0,
+      "destination": 1,
+      "tick": 50
+    },
+    {
+      "id": 21,
+      "origin": 1,
+      "destination": 2,
+      "tick": 54
+    },
+    {
+      "id": 22,
+      "origin": 5,
+      "destination": 1,
+      "tick": 60
+    },
+    {
+      "id": 23,
+      "origin": 3,
+      "destination": 1,
+      "tick": 61
+    },
+    {
+      "id": 24,
+      "origin": 3,
+      "destination": 1,
+      "tick": 63
+    },
+    {
+      "id": 25,
+      "origin": 0,
+      "destination": 1,
+      "tick": 67
+    },
+    {
+      "id": 26,
+      "origin": 0,
+      "destination": 4,
+      "tick": 70
+    },
+    {
+      "id": 27,
+      "origin": 5,
+      "destination": 3,
+      "tick": 76
+    },
+    {
+      "id": 28,
+      "origin": 2,
+      "destination": 4,
+      "tick": 78
+    },
+    {
+      "id": 29,
+      "origin": 2,
+      "destination": 3,
+      "tick": 80
+    },
+    {
+      "id": 30,
+      "origin": 5,
+      "destination": 1,
+      "tick": 91
+    },
+    {
+      "id": 31,
+      "origin": 3,
+      "destination": 1,
+      "tick": 92
+    },
+    {
+      "id": 32,
+      "origin": 3,
+      "destination": 4,
+      "tick": 95
+    },
+    {
+      "id": 33,
+      "origin": 0,
+      "destination": 1,
+      "tick": 96
+    },
+    {
+      "id": 34,
+      "origin": 2,
+      "destination": 5,
+      "tick": 98
+    },
+    {
+      "id": 35,
+      "origin": 2,
+      "destination": 0,
+      "tick": 100
+    },
+    {
+      "id": 36,
+      "origin": 1,
+      "destination": 4,
+      "tick": 103
+    },
+    {
+      "id": 37,
+      "origin": 2,
+      "destination": 5,
+      "tick": 110
+    },
+    {
+      "id": 38,
+      "origin": 3,
+      "destination": 5,
+      "tick": 112
+    },
+    {
+      "id": 39,
+      "origin": 0,
+      "destination": 5,
+      "tick": 113
+    },
+    {
+      "id": 40,
+      "origin": 3,
+      "destination": 1,
+      "tick": 114
+    },
+    {
+      "id": 41,
+      "origin": 0,
+      "destination": 5,
+      "tick": 122
+    },
+    {
+      "id": 42,
+      "origin": 2,
+      "destination": 5,
+      "tick": 127
+    },
+    {
+      "id": 43,
+      "origin": 1,
+      "destination": 4,
+      "tick": 130
+    },
+    {
+      "id": 44,
+      "origin": 4,
+      "destination": 2,
+      "tick": 137
+    },
+    {
+      "id": 45,
+      "origin": 3,
+      "destination": 4,
+      "tick": 139
+    },
+    {
+      "id": 46,
+      "origin": 4,
+      "destination": 0,
+      "tick": 140
+    },
+    {
+      "id": 47,
+      "origin": 4,
+      "destination": 2,
+      "tick": 143
+    },
+    {
+      "id": 48,
+      "origin": 2,
+      "destination": 4,
+      "tick": 144
+    },
+    {
+      "id": 49,
+      "origin": 2,
+      "destination": 5,
+      "tick": 147
+    },
+    {
+      "id": 50,
+      "origin": 5,
+      "destination": 1,
+      "tick": 148
+    },
+    {
+      "id": 51,
+      "origin": 1,
+      "destination": 3,
+      "tick": 149
+    },
+    {
+      "id": 52,
+      "origin": 4,
+      "destination": 1,
+      "tick": 160
+    },
+    {
+      "id": 53,
+      "origin": 4,
+      "destination": 0,
+      "tick": 172
+    },
+    {
+      "id": 54,
+      "origin": 3,
+      "destination": 1,
+      "tick": 173
+    },
+    {
+      "id": 55,
+      "origin": 5,
+      "destination": 4,
+      "tick": 174
+    },
+    {
+      "id": 56,
+      "origin": 0,
+      "destination": 4,
+      "tick": 179
+    },
+    {
+      "id": 57,
+      "origin": 4,
+      "destination": 2,
+      "tick": 180
+    },
+    {
+      "id": 58,
+      "origin": 2,
+      "destination": 1,
+      "tick": 182
+    },
+    {
+      "id": 59,
+      "origin": 1,
+      "destination": 0,
+      "tick": 186
+    },
+    {
+      "id": 60,
+      "origin": 2,
+      "destination": 0,
+      "tick": 188
+    },
+    {
+      "id": 61,
+      "origin": 4,
+      "destination": 5,
+      "tick": 191
+    },
+    {
+      "id": 62,
+      "origin": 5,
+      "destination": 1,
+      "tick": 192
+    },
+    {
+      "id": 63,
+      "origin": 1,
+      "destination": 4,
+      "tick": 193
+    },
+    {
+      "id": 64,
+      "origin": 0,
+      "destination": 3,
+      "tick": 195
+    },
+    {
+      "id": 65,
+      "origin": 4,
+      "destination": 2,
+      "tick": 196
+    },
+    {
+      "id": 66,
+      "origin": 5,
+      "destination": 0,
+      "tick": 197
+    }
+  ]
+}

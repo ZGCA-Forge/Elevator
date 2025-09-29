@@ -78,7 +78,13 @@ class SerializableModel:
         valid_params = set(sig.parameters.keys()) - {"self"}
 
         filtered_data = {k: v for k, v in data.items() if k in valid_params}
-        return cls(**filtered_data)
+        instance = cls(**filtered_data)
+        for k, v in cls.__dict__.items():
+            if issubclass(v.__class__, Enum):  # 要求不能为None
+                value = getattr(instance, k)
+                setattr(instance, k, v.__class__(value))
+        return instance
+
 
     @classmethod
     def from_json(cls: Type[T], json_str: str) -> T:
@@ -200,6 +206,7 @@ class ElevatorState(SerializableModel):
     max_capacity: int = 10
     speed_pre_tick: float = 0.5
     run_status: ElevatorStatus = ElevatorStatus.STOPPED
+    last_tick_direction: Direction = Direction.STOPPED
     indicators: ElevatorIndicators = field(default_factory=ElevatorIndicators)
     passenger_destinations: Dict[int, int] = field(default_factory=dict)  # type: ignore[reportUnknownVariableType]  乘客ID -> 目的地楼层映射
     energy_consumed: float = 0.0
@@ -435,7 +442,7 @@ class ElevatorCommand(SerializableModel):
     """电梯命令"""
 
     elevator_id: int
-    command_type: str  # "go_to_floor", "stop", "set_indicators"
+    command_type: str  # "go_to_floor", "stop"
     parameters: Dict[str, Any] = field(default_factory=dict)  # type: ignore[reportUnknownVariableType]
     request_id: str = field(default_factory=lambda: str(uuid.uuid4()))
     timestamp: str = field(default_factory=lambda: datetime.now().isoformat())
@@ -463,22 +470,6 @@ class GoToFloorCommand(SerializableModel):
     @property
     def parameters(self) -> Dict[str, Any]:
         return {"floor": self.floor, "immediate": self.immediate}
-
-
-@dataclass
-class SetIndicatorsCommand(SerializableModel):
-    """设置指示灯命令"""
-
-    elevator_id: int
-    up: Optional[bool] = None
-    down: Optional[bool] = None
-    command_type: str = field(default="set_indicators", init=False)
-    request_id: str = field(default_factory=lambda: str(uuid.uuid4()))
-    timestamp: str = field(default_factory=lambda: datetime.now().isoformat())
-
-    @property
-    def parameters(self) -> Dict[str, Any]:
-        return {"up": self.up, "down": self.down}
 
 
 # ==================== 流量和配置数据模型 ====================
