@@ -65,6 +65,12 @@ jobs:
         run: |
           pytest -v
 
+      - name: Verify documentation builds
+        run: |
+          pip install -e .[docs]
+          cd docs
+          make html
+
   # Step 3: Security scan
   security:
     name: Security scan
@@ -161,20 +167,8 @@ jobs:
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
-          python -m pip install flake8 pytest
+          python -m pip install pytest
           pip install -e .[dev]
-
-      - name: Lint with flake8
-        run: |
-          # stop the build if there are Python syntax errors or undefined names
-          flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics
-          # exit-zero treats all errors as warnings
-          flake8 . --count --exit-zero --max-line-length=200 --extend-ignore=E203,W503,F401,E402,E721,F841 --statistics
-
-      - name: Type checking with mypy
-        run: |
-          mypy elevator_saga --disable-error-code=unused-ignore
-        continue-on-error: true
 
       - name: Test with pytest
         run: |

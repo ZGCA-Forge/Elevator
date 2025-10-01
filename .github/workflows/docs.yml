@@ -60,12 +60,8 @@ jobs:
 
       - name: Build Sphinx documentation
         run: |
-          # Create docs directory if it doesn't exist
-          mkdir -p docs
-          # Placeholder for Sphinx build
-          echo "Documentation build placeholder - configure Sphinx in docs/"
-          # cd docs
-          # make html
+          cd docs
+          make html
 
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v4
