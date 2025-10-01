@@ -18,13 +18,13 @@ updates:
     commit-message:
       prefix: "deps"
       include: "scope"
-    
+
   # GitHub Actions
   - package-ecosystem: "github-actions"
     directory: "/"
     schedule:
       interval: "weekly"
-      day: "monday" 
+      day: "monday"
       time: "06:00"
     open-pull-requests-limit: 5
     reviewers:
@@ -35,4 +35,3 @@ updates:
     commit-message:
       prefix: "ci"
       include: "scope"
-

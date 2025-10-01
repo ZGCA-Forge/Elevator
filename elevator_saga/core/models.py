@@ -85,7 +85,6 @@ class SerializableModel:
                 setattr(instance, k, v.__class__(value))
         return instance
 
-
     @classmethod
     def from_json(cls: Type[T], json_str: str) -> T:
         """从JSON字符串创建实例"""
@@ -113,10 +112,10 @@ class Position(SerializableModel):
     floor_up_position: int = 0
 
     @property
-    def current_floor_float(self):
+    def current_floor_float(self) -> float:
         return self.current_floor + self.floor_up_position / 10
 
-    def floor_up_position_add(self, num: int):
+    def floor_up_position_add(self, num: int) -> int:
         self.floor_up_position += num
 
         # 处理向上楼层跨越
@@ -139,7 +138,7 @@ class ElevatorIndicators(SerializableModel):
     up: bool = False
     down: bool = False
 
-    def set_direction(self, direction: Direction):
+    def set_direction(self, direction: Direction) -> None:
         """根据方向设置指示灯"""
         if direction == Direction.UP:
             self.up = True
@@ -202,13 +201,13 @@ class ElevatorState(SerializableModel):
     id: int
     position: Position
     next_target_floor: Optional[int] = None
-    passengers: List[int] = field(default_factory=list)  # type: ignore[reportUnknownVariableType]  乘客ID列表
+    passengers: List[int] = field(default_factory=list)  # 乘客ID列表
     max_capacity: int = 10
     speed_pre_tick: float = 0.5
     run_status: ElevatorStatus = ElevatorStatus.STOPPED
     last_tick_direction: Direction = Direction.STOPPED
     indicators: ElevatorIndicators = field(default_factory=ElevatorIndicators)
-    passenger_destinations: Dict[int, int] = field(default_factory=dict)  # type: ignore[reportUnknownVariableType]  乘客ID -> 目的地楼层映射
+    passenger_destinations: Dict[int, int] = field(default_factory=dict)  # 乘客ID -> 目的地楼层映射
     energy_consumed: float = 0.0
     last_update_tick: int = 0
 
@@ -223,7 +222,7 @@ class ElevatorState(SerializableModel):
     def current_floor_float(self) -> float:
         """当前楼层"""
         if isinstance(self.position, dict):
-            self.position = Position.from_dict(self.position)
+            self.position = Position.from_dict(self.position)  # type: ignore[arg-type]
         return self.position.current_floor_float
 
     @property
@@ -269,7 +268,7 @@ class ElevatorState(SerializableModel):
         """按下的楼层（基于当前乘客的目的地动态计算）"""
         return sorted(list(set(self.passenger_destinations.values())))
 
-    def clear_destinations(self):
+    def clear_destinations(self) -> None:
         """清空目标队列"""
         self.next_target_floor = None
 
@@ -279,8 +278,8 @@ class FloorState(SerializableModel):
     """楼层状态"""
 
     floor: int
-    up_queue: List[int] = field(default_factory=list)  # type: ignore[reportUnknownVariableType] 等待上行的乘客ID
-    down_queue: List[int] = field(default_factory=list)  # type: ignore[reportUnknownVariableType] 等待下行的乘客ID
+    up_queue: List[int] = field(default_factory=list)  # 等待上行的乘客ID
+    down_queue: List[int] = field(default_factory=list)  # 等待下行的乘客ID
 
     @property
     def has_waiting_passengers(self) -> bool:
@@ -292,7 +291,7 @@ class FloorState(SerializableModel):
         """总等待人数"""
         return len(self.up_queue) + len(self.down_queue)
 
-    def add_waiting_passenger(self, passenger_id: int, direction: Direction):
+    def add_waiting_passenger(self, passenger_id: int, direction: Direction) -> None:
         """添加等待乘客"""
         if direction == Direction.UP:
             if passenger_id not in self.up_queue:
@@ -321,7 +320,7 @@ class SimulationEvent(SerializableModel):
     data: Dict[str, Any]
     timestamp: Optional[str] = None
 
-    def __post_init__(self):
+    def __post_init__(self) -> None:
         if self.timestamp is None:
             self.timestamp = datetime.now().isoformat()
 
@@ -360,9 +359,9 @@ class SimulationState(SerializableModel):
     tick: int
     elevators: List[ElevatorState]
     floors: List[FloorState]
-    passengers: Dict[int, PassengerInfo] = field(default_factory=dict)  # type: ignore[reportUnknownVariableType]
+    passengers: Dict[int, PassengerInfo] = field(default_factory=dict)
     metrics: PerformanceMetrics = field(default_factory=PerformanceMetrics)
-    events: List[SimulationEvent] = field(default_factory=list)  # type: ignore[reportUnknownVariableType]
+    events: List[SimulationEvent] = field(default_factory=list)
 
     def get_elevator_by_id(self, elevator_id: int) -> Optional[ElevatorState]:
         """根据ID获取电梯"""
@@ -382,7 +381,7 @@ class SimulationState(SerializableModel):
         """根据状态获取乘客"""
         return [p for p in self.passengers.values() if p.status == status]
 
-    def add_event(self, event_type: EventType, data: Dict[str, Any]):
+    def add_event(self, event_type: EventType, data: Dict[str, Any]) -> None:
         """添加事件"""
         event = SimulationEvent(tick=self.tick, type=event_type, data=data)
         self.events.append(event)
@@ -422,7 +421,7 @@ class StepResponse(SerializableModel):
 
     success: bool
     tick: int
-    events: List[SimulationEvent] = field(default_factory=list)  # type: ignore[reportUnknownVariableType]
+    events: List[SimulationEvent] = field(default_factory=list)
     request_id: Optional[str] = None
     error_message: Optional[str] = None
     timestamp: str = field(default_factory=lambda: datetime.now().isoformat())
@@ -443,7 +442,7 @@ class ElevatorCommand(SerializableModel):
 
     elevator_id: int
     command_type: str  # "go_to_floor", "stop"
-    parameters: Dict[str, Any] = field(default_factory=dict)  # type: ignore[reportUnknownVariableType]
+    parameters: Dict[str, Any] = field(default_factory=dict)
     request_id: str = field(default_factory=lambda: str(uuid.uuid4()))
     timestamp: str = field(default_factory=lambda: datetime.now().isoformat())
 
@@ -494,7 +493,7 @@ class TrafficPattern(SerializableModel):
     entries: List[TrafficEntry] = field(default_factory=list)
     metadata: Dict[str, Any] = field(default_factory=dict)
 
-    def add_entry(self, entry: TrafficEntry):
+    def add_entry(self, entry: TrafficEntry) -> None:
         """添加流量条目"""
         self.entries.append(entry)
 

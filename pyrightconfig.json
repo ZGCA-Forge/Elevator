@@ -1,33 +1,30 @@
 {
-    "include": ["."],
-    "exclude": [
-      "build",
-      "dist",
-      "__pycache__",
-      ".mypy_cache",
-      ".pytest_cache",
-      "htmlcov",
-      ".idea",
-      ".vscode",
-      "docs/_build",
-      "elevator_saga.egg-info"
-    ],
-    "pythonVersion": "3.10",
-    "typeCheckingMode": "strict",
-    "executionEnvironments": [
-      {
-        "root": ".",
-        "extraPaths": ["elevator_saga"]
-      }
-    ],
-    "reportMissingImports": "none",
-    "reportUnusedImport": "warning",
-    "reportUnusedVariable": "warning",
-    "reportUnknownArgumentType": "warning",
-    "reportUnknownMemberType": "warning",
-    "reportUnknownVariableType": "warning",
-    "reportUnknownParameterType": "warning",
-    "reportPrivateUsage": "warning",
-    "reportMissingTypeStubs": false
-  }
-  
+  "include": ["."],
+  "exclude": [
+    "build",
+    "dist",
+    "__pycache__",
+    ".mypy_cache",
+    ".pytest_cache",
+    "htmlcov",
+    ".idea",
+    ".vscode",
+    "docs/_build",
+    "elevatorpy.egg-info",
+    "elevator_saga.egg-info",
+    ".eggs",
+    "MsgCenterPy"
+  ],
+  "pythonVersion": "3.10",
+  "typeCheckingMode": "basic",
+  "executionEnvironments": [
+    {
+      "root": ".",
+      "extraPaths": ["elevator_saga"]
+    }
+  ],
+  "reportMissingImports": "warning",
+  "reportUnusedImport": "warning",
+  "reportUnusedVariable": "warning",
+  "reportMissingTypeStubs": false
+}

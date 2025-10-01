@@ -1,5 +1,60 @@
-.vscode
-.idea
-__pycache__
-.mypy_cache
-elevator_saga.egg-info
+# ================================
+# Python-related files
+# ================================
+
+# Compiled Python files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Distribution / packaging
+.Python
+build/
+dist/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# Unit test / coverage reports
+htmlcov/
+.tox/
+.nox/
+.coverage
+.coverage.*
+.cache
+nosetests.xml
+coverage.xml
+*.cover
+*.py,cover
+.hypothesis/
+.pytest_cache/
+cover/
+
+# Type checking
+.mypy_cache/
+
+# Documentation
+docs/_build/
+docs/_static/
+docs/_templates/
+docs/_static/
+
+# ================================
+# IDE and Editor files
+# ================================
+
+# PyCharm
+.idea/
+
+# Visual Studio Code
+.vscode/
+.cursor/
+.cursorignore
+pyrightconfig.json
+
+# ================================
+# Operating System files
+# ================================
+
+# macOS
+.DS_Store

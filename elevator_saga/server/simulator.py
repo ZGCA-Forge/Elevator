@@ -33,13 +33,13 @@ from elevator_saga.core.models import (
 _SERVER_DEBUG_MODE = False
 
 
-def set_server_debug_mode(enabled: bool):
+def set_server_debug_mode(enabled: bool) -> None:
     """Enable or disable server debug logging"""
     global _SERVER_DEBUG_MODE
     globals()["_SERVER_DEBUG_MODE"] = enabled
 
 
-def server_debug_log(message: str):
+def server_debug_log(message: str) -> None:
     """Print server debug message if debug mode is enabled"""
     if _SERVER_DEBUG_MODE:
         print(f"[SERVER-DEBUG] {message}", flush=True)
@@ -360,9 +360,7 @@ class ElevatorSimulation:
                 destination=traffic_entry.destination,
                 arrive_tick=self.tick,
             )
-            assert (
-                traffic_entry.origin != traffic_entry.destination
-            ), f"乘客{passenger.id}目的地和起始地{traffic_entry.origin}重复"
+            assert traffic_entry.origin != traffic_entry.destination, f"乘客{passenger.id}目的地和起始地{traffic_entry.origin}重复"
             self.passengers[passenger.id] = passenger
             server_debug_log(f"乘客 {passenger.id:4}： 创建 | {passenger}")
             if passenger.destination > passenger.origin:
@@ -434,7 +432,9 @@ class ElevatorSimulation:
             if target_floor == new_floor and elevator.position.floor_up_position == 0:
                 elevator.run_status = ElevatorStatus.STOPPED
                 # 刚进入Stopped状态，可以通过last_direction识别
-                self._emit_event(EventType.STOPPED_AT_FLOOR, {"elevator": elevator.id, "floor": new_floor, "reason": "move_reached"})
+                self._emit_event(
+                    EventType.STOPPED_AT_FLOOR, {"elevator": elevator.id, "floor": new_floor, "reason": "move_reached"}
+                )
             # elevator.energy_consumed += abs(direction * elevator.speed_pre_tick) * 0.5
 
     def _process_elevator_stops(self) -> None:
@@ -471,7 +471,7 @@ class ElevatorSimulation:
                 self._set_elevator_target_floor(elevator, elevator.next_target_floor)
                 elevator.next_target_floor = None
 
-    def _set_elevator_target_floor(self, elevator: ElevatorState, floor: int):
+    def _set_elevator_target_floor(self, elevator: ElevatorState, floor: int) -> None:
         """
         同一个tick内提示
         [SERVER-DEBUG] 电梯 E0 下一目的地设定为 F1
@@ -492,9 +492,7 @@ class ElevatorSimulation:
                 server_debug_log(f"电梯 E{elevator.id} 被设定为减速")
         if elevator.current_floor != floor or elevator.position.floor_up_position != 0:
             old_status = elevator.run_status.value
-            server_debug_log(
-                f"电梯{elevator.id} 状态:{old_status}->{elevator.run_status.value}"
-            )
+            server_debug_log(f"电梯{elevator.id} 状态:{old_status}->{elevator.run_status.value}")
 
     def _calculate_distance_to_target(self, elevator: ElevatorState) -> float:
         """计算到目标楼层的距离（以floor_up_position为单位）"""

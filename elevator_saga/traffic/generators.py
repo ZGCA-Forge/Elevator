@@ -9,7 +9,7 @@ import math
 import os.path
 import random
 from pathlib import Path
-from typing import Any, Dict, List, Optional
+from typing import Any, Callable, Dict, List, Optional
 
 # 建筑规模配置
 BUILDING_SCALES = {
@@ -294,9 +294,7 @@ def generate_fire_evacuation_traffic(
             # 在10个tick内陆续到达，模拟疏散的紧急性
             arrival_tick = alarm_tick + random.randint(0, min(10, duration - alarm_tick - 1))
             if arrival_tick < duration:
-                traffic.append(
-                    {"id": passenger_id, "origin": floor, "destination": 0, "tick": arrival_tick}  # 疏散到大厅
-                )
+                traffic.append({"id": passenger_id, "origin": floor, "destination": 0, "tick": arrival_tick})  # 疏散到大厅
                 passenger_id += 1
 
     return limit_traffic_count(traffic, max_people)
@@ -738,12 +736,12 @@ def determine_building_scale(floors: int, elevators: int) -> str:
         return "large"
 
 
-def generate_traffic_file(scenario: str, output_file: str, scale: Optional[str] = None, **kwargs) -> int:
+def generate_traffic_file(scenario: str, output_file: str, scale: Optional[str] = None, **kwargs: Any) -> int:
     """生成单个流量文件，支持规模化配置"""
     if scenario not in TRAFFIC_SCENARIOS:
         raise ValueError(f"Unknown scenario: {scenario}. Available: {list(TRAFFIC_SCENARIOS.keys())}")
 
-    config = TRAFFIC_SCENARIOS[scenario]
+    config: Dict[str, Any] = TRAFFIC_SCENARIOS[scenario]
 
     # 确定建筑规模
     if scale is None:
@@ -766,6 +764,7 @@ def generate_traffic_file(scenario: str, output_file: str, scale: Optional[str] 
     scale_params = config["scales"].get(scale, {})
 
     # 合并参数：kwargs > scale_params > building_scale_defaults
+    assert scale is not None  # scale should be determined by this point
     building_scale = BUILDING_SCALES[scale]
     params = {}
 
@@ -786,9 +785,10 @@ def generate_traffic_file(scenario: str, output_file: str, scale: Optional[str] 
     # 生成流量数据 - 只传递生成器函数需要的参数
     import inspect
 
-    generator_signature = inspect.signature(config["generator"])
+    generator_func: Callable[..., List[Dict[str, Any]]] = config["generator"]
+    generator_signature = inspect.signature(generator_func)
     generator_params = {k: v for k, v in params.items() if k in generator_signature.parameters}
-    traffic_data = config["generator"](**generator_params)
+    traffic_data = generator_func(**generator_params)
 
     # 准备building配置
     building_config = {
@@ -819,7 +819,7 @@ def generate_scaled_traffic_files(
     seed: int = 42,
     generate_all_scales: bool = False,
     custom_building: Optional[Dict[str, Any]] = None,
-):
+) -> None:
     """生成按规模分类的流量文件"""
     output_path = Path(output_dir)
     output_path.mkdir(exist_ok=True)
@@ -848,7 +848,7 @@ def generate_scaled_traffic_files(
 
 def _generate_files_for_scale(
     output_path: Path, scale: str, seed: int, custom_building: Optional[Dict[str, Any]] = None
-):
+) -> None:
     """为指定规模生成所有适合的场景文件"""
     building_config = BUILDING_SCALES[scale]
     total_passengers = 0
@@ -868,9 +868,10 @@ def _generate_files_for_scale(
     print(f"\nGenerating {scale} scale traffic files:")
     print(f"Building: {floors} floors, {elevators} elevators, capacity {elevator_capacity}")
 
-    for scenario_name, config in TRAFFIC_SCENARIOS.items():
+    for scenario_name, scenario_config in TRAFFIC_SCENARIOS.items():
         # 检查场景是否适合该规模
-        if scale not in config["suitable_scales"]:
+        config_dict: Dict[str, Any] = scenario_config
+        if scale not in config_dict["suitable_scales"]:
             continue
 
         filename = f"{scenario_name}.json"
@@ -905,7 +906,7 @@ def generate_all_traffic_files(
     elevators: int = 2,
     elevator_capacity: int = 8,
     seed: int = 42,
-):
+) -> None:
     """生成所有场景的流量文件 - 保持向后兼容"""
     scale = determine_building_scale(floors, elevators)
     custom_building = {"floors": floors, "elevators": elevators, "capacity": elevator_capacity}
@@ -913,7 +914,7 @@ def generate_all_traffic_files(
     generate_scaled_traffic_files(output_dir=output_dir, scale=scale, seed=seed, custom_building=custom_building)
 
 
-def main():
+def main() -> None:
     """主函数 - 命令行接口"""
     import argparse
 

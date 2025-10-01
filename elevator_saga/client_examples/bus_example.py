@@ -3,11 +3,11 @@ from typing import List
 
 from elevator_saga.client.base_controller import ElevatorController
 from elevator_saga.client.proxy_models import ProxyElevator, ProxyFloor, ProxyPassenger
-from elevator_saga.core.models import SimulationEvent, Direction
+from elevator_saga.core.models import Direction, SimulationEvent
 
 
-class SingleElevatorBusController(ElevatorController):
-    def __init__(self):
+class ElevatorBusExampleController(ElevatorController):
+    def __init__(self) -> None:
         super().__init__("http://127.0.0.1:8000", True)
         self.all_passengers: List[ProxyPassenger] = []
         self.max_floor = 0
@@ -27,7 +27,11 @@ class SingleElevatorBusController(ElevatorController):
     ) -> None:
         print(f"Tick {tick}: 即将处理 {len(events)} 个事件 {[e.type.value for e in events]}")
         for i in elevators:
-            print(f"\t{i.id}[{i.target_floor_direction.value},{i.current_floor_float}/{i.target_floor}]" + "👦" * len(i.passengers), end="")
+            print(
+                f"\t{i.id}[{i.target_floor_direction.value},{i.current_floor_float}/{i.target_floor}]"
+                + "👦" * len(i.passengers),
+                end="",
+            )
         print()
 
     def on_event_execute_end(
@@ -35,7 +39,7 @@ class SingleElevatorBusController(ElevatorController):
     ) -> None:
         pass
 
-    def on_passenger_call(self, passenger:ProxyPassenger, floor: ProxyFloor, direction: str) -> None:
+    def on_passenger_call(self, passenger: ProxyPassenger, floor: ProxyFloor, direction: str) -> None:
         self.all_passengers.append(passenger)
         pass
 
@@ -67,6 +71,7 @@ class SingleElevatorBusController(ElevatorController):
     def on_elevator_approaching(self, elevator: ProxyElevator, floor: ProxyFloor, direction: str) -> None:
         pass
 
+
 if __name__ == "__main__":
-    algorithm = SingleElevatorBusController()
+    algorithm = ElevatorBusExampleController()
     algorithm.start()

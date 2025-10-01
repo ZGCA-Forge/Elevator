@@ -22,6 +22,8 @@ class ProxyFloor(FloorState):
         """获取 FloorState 实例"""
         state = self._api_client.get_state()
         floor_data = next((f for f in state.floors if f.floor == self._floor_id), None)
+        if floor_data is None:
+            raise ValueError(f"Floor {self._floor_id} not found in state")
         return floor_data
 
     def __getattribute__(self, name: str) -> Any:
@@ -66,6 +68,8 @@ class ProxyElevator(ElevatorState):
         # 获取当前状态
         state = self._api_client.get_state()
         elevator_data = next((e for e in state.elevators if e.id == self._elevator_id), None)
+        if elevator_data is None:
+            raise ValueError(f"Elevator {self._elevator_id} not found in state")
         return elevator_data
 
     def __getattribute__(self, name: str) -> Any:
@@ -113,6 +117,8 @@ class ProxyPassenger(PassengerInfo):
         """获取 PassengerInfo 实例"""
         state = self._api_client.get_state()
         passenger_data = state.passengers.get(self._passenger_id)
+        if passenger_data is None:
+            raise ValueError(f"Passenger {self._passenger_id} not found in state")
         return passenger_data
 
     def __getattribute__(self, name: str) -> Any:

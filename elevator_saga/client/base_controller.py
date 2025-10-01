@@ -44,7 +44,7 @@ class ElevatorController(ABC):
         self.api_client = ElevatorAPIClient(server_url)
 
     @abstractmethod
-    def on_init(self, elevators: List[Any], floors: List[Any]):
+    def on_init(self, elevators: List[Any], floors: List[Any]) -> None:
         """
         算法初始化方法 - 必须由子类实现
 
@@ -55,7 +55,7 @@ class ElevatorController(ABC):
         pass
 
     @abstractmethod
-    def on_event_execute_start(self, tick: int, events: List[Any], elevators: List[Any], floors: List[Any]):
+    def on_event_execute_start(self, tick: int, events: List[Any], elevators: List[Any], floors: List[Any]) -> None:
         """
         事件执行前的回调 - 必须由子类实现
 
@@ -68,7 +68,7 @@ class ElevatorController(ABC):
         pass
 
     @abstractmethod
-    def on_event_execute_end(self, tick: int, events: List[Any], elevators: List[Any], floors: List[Any]):
+    def on_event_execute_end(self, tick: int, events: List[Any], elevators: List[Any], floors: List[Any]) -> None:
         """
         事件执行后的回调 - 必须由子类实现
 
@@ -80,20 +80,20 @@ class ElevatorController(ABC):
         """
         pass
 
-    def on_start(self):
+    def on_start(self) -> None:
         """
         算法启动前的回调 - 可选实现
         """
         print(f"启动 {self.__class__.__name__} 算法")
 
-    def on_stop(self):
+    def on_stop(self) -> None:
         """
         算法停止后的回调 - 可选实现
         """
         print(f"停止 {self.__class__.__name__} 算法")
 
     @abstractmethod
-    def on_passenger_call(self, passenger: ProxyPassenger, floor: ProxyFloor, direction: str):
+    def on_passenger_call(self, passenger: ProxyPassenger, floor: ProxyFloor, direction: str) -> None:
         """
         乘客呼叫时的回调 - 可选实现
 
@@ -104,7 +104,7 @@ class ElevatorController(ABC):
         pass
 
     @abstractmethod
-    def on_elevator_idle(self, elevator: ProxyElevator):
+    def on_elevator_idle(self, elevator: ProxyElevator) -> None:
         """
         电梯空闲时的回调 - 可选实现
 
@@ -114,7 +114,7 @@ class ElevatorController(ABC):
         pass
 
     @abstractmethod
-    def on_elevator_stopped(self, elevator: ProxyElevator, floor: ProxyFloor):
+    def on_elevator_stopped(self, elevator: ProxyElevator, floor: ProxyFloor) -> None:
         """
         电梯停靠时的回调 - 可选实现
 
@@ -125,7 +125,7 @@ class ElevatorController(ABC):
         pass
 
     @abstractmethod
-    def on_passenger_board(self, elevator: ProxyElevator, passenger: ProxyPassenger):
+    def on_passenger_board(self, elevator: ProxyElevator, passenger: ProxyPassenger) -> None:
         """
         乘客上梯时的回调 - 可选实现
 
@@ -136,7 +136,7 @@ class ElevatorController(ABC):
         pass
 
     @abstractmethod
-    def on_passenger_alight(self, elevator: ProxyElevator, passenger: ProxyPassenger, floor: ProxyFloor):
+    def on_passenger_alight(self, elevator: ProxyElevator, passenger: ProxyPassenger, floor: ProxyFloor) -> None:
         """
         乘客下车时的回调 - 可选实现
 
@@ -148,7 +148,7 @@ class ElevatorController(ABC):
         pass
 
     @abstractmethod
-    def on_elevator_passing_floor(self, elevator: ProxyElevator, floor: ProxyFloor, direction: str):
+    def on_elevator_passing_floor(self, elevator: ProxyElevator, floor: ProxyFloor, direction: str) -> None:
         """
         电梯经过楼层时的回调 - 可选实现
 
@@ -160,7 +160,7 @@ class ElevatorController(ABC):
         pass
 
     @abstractmethod
-    def on_elevator_approaching(self, elevator: ProxyElevator, floor: ProxyFloor, direction: str):
+    def on_elevator_approaching(self, elevator: ProxyElevator, floor: ProxyFloor, direction: str) -> None:
         """
         电梯即将到达时的回调 - 可选实现
 
@@ -171,7 +171,7 @@ class ElevatorController(ABC):
         """
         pass
 
-    def _internal_init(self, elevators: List[Any], floors: List[Any]):
+    def _internal_init(self, elevators: List[Any], floors: List[Any]) -> None:
         """内部初始化方法"""
         self.elevators = elevators
         self.floors = floors
@@ -180,7 +180,7 @@ class ElevatorController(ABC):
         # 调用用户的初始化方法
         self.on_init(elevators, floors)
 
-    def start(self):
+    def start(self) -> None:
         """
         启动控制器
         """
@@ -198,12 +198,12 @@ class ElevatorController(ABC):
             self.is_running = False
             self.on_stop()
 
-    def stop(self):
+    def stop(self) -> None:
         """停止控制器"""
         self.is_running = False
         print(f"停止 {self.__class__.__name__}")
 
-    def on_simulation_complete(self, final_state: Dict[str, Any]):
+    def on_simulation_complete(self, final_state: Dict[str, Any]) -> None:
         """
         模拟完成时的回调 - 可选实现
 
@@ -212,7 +212,7 @@ class ElevatorController(ABC):
         """
         pass
 
-    def _run_event_driven_simulation(self):
+    def _run_event_driven_simulation(self) -> None:
         """运行事件驱动的模拟"""
         try:
             # 获取初始状态并初始化，默认从0开始
@@ -304,7 +304,7 @@ class ElevatorController(ABC):
         try:
             traffic_info = self.api_client.get_traffic_info()
             if traffic_info:
-                self.current_traffic_max_tick = traffic_info["max_tick"]
+                self.current_traffic_max_tick = int(traffic_info["max_tick"])
                 debug_log(f"Updated traffic info - max_tick: {self.current_traffic_max_tick}")
             else:
                 debug_log("Failed to get traffic info")
@@ -313,7 +313,7 @@ class ElevatorController(ABC):
             debug_log(f"Error updating traffic info: {e}")
             self.current_traffic_max_tick = 0
 
-    def _handle_single_event(self, event: SimulationEvent):
+    def _handle_single_event(self, event: SimulationEvent) -> None:
         """处理单个事件"""
         if event.type == EventType.UP_BUTTON_PRESSED:
             floor_id = event.data["floor"]
@@ -385,7 +385,7 @@ class ElevatorController(ABC):
                 floor_proxy = ProxyFloor(floor_id, self.api_client)
                 self.on_passenger_alight(elevator_proxy, passenger_proxy, floor_proxy)
 
-    def _reset_and_reinit(self):
+    def _reset_and_reinit(self) -> None:
         """重置并重新初始化"""
         try:
             # 重置服务器状态

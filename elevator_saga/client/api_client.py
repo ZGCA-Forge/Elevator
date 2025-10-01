@@ -134,12 +134,14 @@ class ElevatorAPIClient:
     def send_elevator_command(self, command: Union[GoToFloorCommand]) -> bool:
         """发送电梯命令"""
         endpoint = self._get_elevator_endpoint(command)
-        debug_log(f"Sending elevator command: {command.command_type} to elevator {command.elevator_id} To:F{command.floor}")
+        debug_log(
+            f"Sending elevator command: {command.command_type} to elevator {command.elevator_id} To:F{command.floor}"
+        )
 
         response_data = self._send_post_request(endpoint, command.parameters)
 
         if response_data.get("success"):
-            return response_data["success"]
+            return bool(response_data["success"])
         else:
             raise RuntimeError(f"Command failed: {response_data.get('error_message')}")
 
@@ -168,7 +170,7 @@ class ElevatorAPIClient:
 
         try:
             with urllib.request.urlopen(url, timeout=60) as response:
-                data = json.loads(response.read().decode("utf-8"))
+                data: Dict[str, Any] = json.loads(response.read().decode("utf-8"))
                 # debug_log(f"GET {url} -> {response.status}")
                 return data
         except urllib.error.URLError as e:
@@ -178,7 +180,7 @@ class ElevatorAPIClient:
         """重置模拟"""
         try:
             response_data = self._send_post_request("/api/reset", {})
-            success = response_data.get("success", False)
+            success = bool(response_data.get("success", False))
             if success:
                 # 清空缓存，因为状态已重置
                 self._cached_state = None
@@ -190,11 +192,11 @@ class ElevatorAPIClient:
             debug_log(f"Reset failed: {e}")
             return False
 
-    def next_traffic_round(self, full_reset = False) -> bool:
+    def next_traffic_round(self, full_reset: bool = False) -> bool:
         """切换到下一个流量文件"""
         try:
             response_data = self._send_post_request("/api/traffic/next", {"full_reset": full_reset})
-            success = response_data.get("success", False)
+            success = bool(response_data.get("success", False))
             if success:
                 # 清空缓存，因为流量文件已切换，状态会改变
                 self._cached_state = None
@@ -230,7 +232,7 @@ class ElevatorAPIClient:
 
         try:
             with urllib.request.urlopen(req, timeout=600) as response:
-                response_data = json.loads(response.read().decode("utf-8"))
+                response_data: Dict[str, Any] = json.loads(response.read().decode("utf-8"))
                 # debug_log(f"POST {url} -> {response.status}")
                 return response_data
         except urllib.error.URLError as e:

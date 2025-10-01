@@ -7,7 +7,7 @@ from typing import Dict, List
 
 from elevator_saga.client.base_controller import ElevatorController
 from elevator_saga.client.proxy_models import ProxyElevator, ProxyFloor, ProxyPassenger
-from elevator_saga.core.models import SimulationEvent, Direction
+from elevator_saga.core.models import Direction, SimulationEvent
 
 
 class ElevatorBusController(ElevatorController):
@@ -45,7 +45,11 @@ class ElevatorBusController(ElevatorController):
         """事件执行前的回调"""
         print(f"Tick {tick}: 即将处理 {len(events)} 个事件 {[e.type.value for e in events]}")
         for i in elevators:
-            print(f"\t{i.id}[{i.target_floor_direction.value},{i.current_floor_float}/{i.target_floor}]" + "👦" * len(i.passengers), end="")
+            print(
+                f"\t{i.id}[{i.target_floor_direction.value},{i.current_floor_float}/{i.target_floor}]"
+                + "👦" * len(i.passengers),
+                end="",
+            )
         print()
 
     def on_event_execute_end(
@@ -54,7 +58,7 @@ class ElevatorBusController(ElevatorController):
         """事件执行后的回调"""
         pass
 
-    def on_passenger_call(self, passenger:ProxyPassenger, floor: ProxyFloor, direction: str) -> None:
+    def on_passenger_call(self, passenger: ProxyPassenger, floor: ProxyFloor, direction: str) -> None:
         """
         乘客呼叫时的回调
         公交车模式下，电梯已经在循环运行，无需特别响应呼叫
@@ -107,9 +111,7 @@ class ElevatorBusController(ElevatorController):
         乘客上梯时的回调
         打印乘客上梯信息
         """
-        print(
-            f" 乘客{passenger.id} E{elevator.id}⬆️ F{elevator.current_floor} -> F{passenger.destination}"
-        )
+        print(f" 乘客{passenger.id} E{elevator.id}⬆️ F{elevator.current_floor} -> F{passenger.destination}")
 
     def on_passenger_alight(self, elevator: ProxyElevator, passenger: ProxyPassenger, floor: ProxyFloor) -> None:
         """
@@ -135,6 +137,7 @@ class ElevatorBusController(ElevatorController):
             if elevator.id == 0:  # 这里为了测试，让0号电梯往上一层就新加一层，上行永远不会开门
                 elevator.go_to_floor(elevator.target_floor + 1, immediate=True)
                 print(f" 不让0号电梯上行停站，设定新目标楼层 {elevator.target_floor + 1}")
+
 
 if __name__ == "__main__":
     algorithm = ElevatorBusController(debug=True)
