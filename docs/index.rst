@@ -1,12 +1,12 @@
 Welcome to Elevator Saga's Documentation!
 ==========================================
 
-.. image:: https://badge.fury.io/py/elevatorpy.svg
-   :target: https://badge.fury.io/py/elevatorpy
+.. image:: https://badge.fury.io/py/elevator-py.svg
+   :target: https://badge.fury.io/py/elevator-py
    :alt: PyPI version
 
-.. image:: https://img.shields.io/pypi/pyversions/elevatorpy.svg
-   :target: https://pypi.org/project/elevatorpy/
+.. image:: https://img.shields.io/pypi/pyversions/elevator-py.svg
+   :target: https://pypi.org/project/elevator-py/
    :alt: Python versions
 
 .. image:: https://github.com/ZGCA-Forge/Elevator/actions/workflows/ci.yml/badge.svg
@@ -40,14 +40,14 @@ Basic Installation
 
 .. code-block:: bash
 
-   pip install elevatorpy
+   pip install elevator-py
 
 With Development Dependencies
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 .. code-block:: bash
 
-   pip install elevatorpy[dev]
+   pip install elevator-py[dev]
 
 From Source
 ~~~~~~~~~~~

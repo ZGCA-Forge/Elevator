@@ -2,8 +2,8 @@
 
 <div align="center">
 
-[![PyPI version](https://badge.fury.io/py/elevatorpy.svg)](https://badge.fury.io/py/elevatorpy)
-[![Python versions](https://img.shields.io/pypi/pyversions/elevatorpy.svg)](https://pypi.org/project/elevatorpy/)
+[![PyPI version](https://badge.fury.io/py/elevator-py.svg)](https://badge.fury.io/py/elevator-py)
+[![Python versions](https://img.shields.io/pypi/pyversions/elevator-py.svg)](https://pypi.org/project/elevator-py/)
 [![Build Status](https://github.com/ZGCA-Forge/Elevator/actions/workflows/ci.yml/badge.svg)](https://github.com/ZGCA-Forge/Elevator/actions)
 [![Documentation](https://img.shields.io/badge/docs-GitHub%20Pages-brightgreen)](https://zgca-forge.github.io/Elevator/)
 
@@ -27,13 +27,13 @@ Elevator Saga is a Python implementation of an elevator [simulation game](https:
 ### Basic Installation
 
 ```bash
-pip install elevatorpy
+pip install elevator-py
 ```
 
 ### With Development Dependencies
 
 ```bash
-pip install elevatorpy[dev]
+pip install elevator-py[dev]
 ```
 
 ### From Source
