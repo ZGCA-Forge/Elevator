@@ -17,9 +17,9 @@ Architecture Overview
    │ api_client      │                    │                 │
    └─────────────────┘                    └─────────────────┘
            │                                       │
-           │  GET /api/state                      │
-           │  POST /api/step                      │
-           │  POST /api/elevators/:id/go_to_floor │
+           │  GET /api/state                       │
+           │  POST /api/step                       │
+           │  POST /api/elevators/:id/go_to_floor  │
            │                                       │
            └───────────────────────────────────────┘
 
@@ -394,37 +394,37 @@ Typical communication sequence during one tick:
 
 .. code-block:: text
 
-   Client                                Server
-     │                                     │
-     │  1. GET /api/state                  │
-     ├────────────────────────────────────►│
-     │  ◄── SimulationState (cached)       │
-     │                                     │
-     │  2. Analyze state, make decisions   │
-     │                                     │
-     │  3. POST /api/elevators/0/go_to_floor │
-     ├────────────────────────────────────►│
-     │  ◄── {"success": true}              │
-     │                                     │
-     │  4. GET /api/state (from cache)     │
-     │     No HTTP request!                │
-     │                                     │
-     │  5. POST /api/step                  │
-     ├────────────────────────────────────►│
-     │         Server processes tick       │
-     │         - Moves elevators           │
-     │         - Boards/alights passengers │
-     │         - Generates events          │
-     │  ◄── {tick: 43, events: [...]}     │
-     │                                     │
-     │  6. Process events                  │
-     │     Cache invalidated               │
-     │                                     │
-     │  7. GET /api/state (fetches fresh)  │
-     ├────────────────────────────────────►│
-     │  ◄── SimulationState                │
-     │                                     │
-     └─────────────────────────────────────┘
+   Client                                 Server
+     │                                      │
+     │  1. GET /api/state                   │
+     ├─────────────────────────────────────►│
+     │  ◄── SimulationState (cached)        │
+     │                                      │
+     │  2. Analyze state, make decisions    │
+     │                                      │
+     │  3. POST /api/elevators/0/go_to_floor│
+     ├─────────────────────────────────────►│
+     │  ◄── {"success": true}               │
+     │                                      │
+     │  4. GET /api/state (from cache)      │
+     │     No HTTP request!                 │
+     │                                      │
+     │  5. POST /api/step                   │
+     ├─────────────────────────────────────►│
+     │         Server processes tick        │
+     │         - Moves elevators            │
+     │         - Boards/alights passengers  │
+     │         - Generates events           │
+     │  ◄── {tick: 43, events: [...]}       │
+     │                                      │
+     │  6. Process events                   │
+     │     Cache invalidated                │
+     │                                      │
+     │  7. GET /api/state (fetches fresh)   │
+     ├─────────────────────────────────────►│
+     │  ◄── SimulationState                 │
+     │                                      │
+     └──────────────────────────────────────┘
 
 Error Handling
 --------------
@@ -475,23 +475,6 @@ The simulator uses a lock to ensure thread-safe access:
                # ... return state ...
 
 This allows Flask to handle concurrent requests safely.
-
-Performance Considerations
---------------------------
-
-**Minimize HTTP Calls**:
-
-.. code-block:: python
-
-   # ❌ Bad - 3 HTTP calls
-   for i in range(3):
-       state = api_client.get_state()
-       print(state.tick)
-
-   # ✅ Good - 1 HTTP call (cached)
-   state = api_client.get_state()
-   for i in range(3):
-       print(state.tick)
 
 **Batch Commands**:
 

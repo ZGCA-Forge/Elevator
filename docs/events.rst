@@ -8,21 +8,21 @@ Simulation Overview
 
 .. code-block:: text
 
-   ┌─────────────────────────────────────────────────────────┐
+   ┌──────────────────────────────────────────────────────────┐
    │                  Simulation Loop                         │
    │                                                          │
    │  Tick N                                                  │
-   │    1. Update elevator status (START_UP → CONSTANT_SPEED)│
+   │    1. Update elevator status (START_UP → CONSTANT_SPEED) │
    │    2. Process arrivals (new passengers)                  │
    │    3. Move elevators (physics simulation)                │
    │    4. Process stops (boarding/alighting)                 │
    │    5. Generate events                                    │
    │                                                          │
-   │  Events sent to client → Client processes → Commands    │
+   │  Events sent to client → Client processes → Commands     │
    │                                                          │
    │  Tick N+1                                                │
    │    (repeat...)                                           │
-   └─────────────────────────────────────────────────────────┘
+   └──────────────────────────────────────────────────────────┘
 
 Tick-Based Execution
 --------------------
@@ -463,27 +463,6 @@ Here's what happens in a typical tick:
 Key Timing Concepts
 -------------------
 
-Command vs. Execution
-~~~~~~~~~~~~~~~~~~~~~
-
-.. code-block:: python
-
-   # Tick 42: Controller sends command
-   elevator.go_to_floor(5, immediate=False)
-   # ← Command queued in elevator.next_target_floor
-
-   # Tick 43: Server processes
-   # ← _update_elevator_status() assigns target
-   # ← Elevator starts moving
-
-   # Tick 44-46: Elevator in motion
-   # ← Events: PASSING_FLOOR
-
-   # Tick 47: Elevator arrives
-   # ← Event: STOPPED_AT_FLOOR
-
-There's a **one-tick delay** between command and execution (unless ``immediate=True``).
-
 Immediate vs. Queued
 ~~~~~~~~~~~~~~~~~~~~
 
@@ -530,47 +509,6 @@ Key metrics:
 - **Wait time**: ``pickup_tick - arrive_tick`` (how long passenger waited)
 - **System time**: ``dropoff_tick - arrive_tick`` (total time in system)
 - **P95**: 95th percentile (worst-case for most passengers)
-
-Best Practices
---------------
-
-1. **React to Events**: Don't poll state - implement event handlers
-2. **Use Queued Commands**: Default ``immediate=False`` is safer
-3. **Track Passengers**: Monitor ``on_passenger_call`` to know demand
-4. **Optimize for Wait Time**: Reduce time between arrival and pickup
-5. **Consider Load**: Check ``elevator.is_full`` before dispatching
-6. **Handle Idle**: Always give idle elevators something to do (even if it's "go to floor 0")
-
-Example: Efficient Dispatch
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-.. code-block:: python
-
-   def on_passenger_call(self, passenger: ProxyPassenger, floor: ProxyFloor, direction: str) -> None:
-       """Dispatch nearest suitable elevator"""
-       best_elevator = None
-       best_cost = float('inf')
-
-       for elevator in self.elevators:
-           # Skip if full
-           if elevator.is_full:
-               continue
-
-           # Calculate cost (distance + current load)
-           distance = abs(elevator.current_floor - floor.floor)
-           load_penalty = elevator.load_factor * 10
-           cost = distance + load_penalty
-
-           # Check if going in right direction
-           if elevator.target_floor_direction.value == direction:
-               cost *= 0.5  # Prefer elevators already going that way
-
-           if cost < best_cost:
-               best_cost = cost
-               best_elevator = elevator
-
-       if best_elevator:
-           best_elevator.go_to_floor(floor.floor)
 
 Summary
 -------

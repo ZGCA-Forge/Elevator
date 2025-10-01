@@ -42,22 +42,6 @@ Basic Installation
 
    pip install elevator-py
 
-With Development Dependencies
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-.. code-block:: bash
-
-   pip install elevator-py[dev]
-
-From Source
-~~~~~~~~~~~
-
-.. code-block:: bash
-
-   git clone https://github.com/ZGCA-Forge/Elevator.git
-   cd Elevator
-   pip install -e .[dev]
-
 Quick Start
 -----------
 

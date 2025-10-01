@@ -343,25 +343,6 @@ Benefits of Proxy Architecture
 5. **Separation of Concerns**: State management handled by proxies, logic in controller
 6. **Testability**: Can mock API client for unit tests
 
-Performance Considerations
---------------------------
-
-Each attribute access triggers an API call. For better performance:
-
-.. code-block:: python
-
-   # ❌ Inefficient - multiple API calls
-   if elevator.current_floor < elevator.target_floor:
-       diff = elevator.target_floor - elevator.current_floor
-
-   # ✅ Better - store references
-   current = elevator.current_floor
-   target = elevator.target_floor
-   if current < target:
-       diff = target - current
-
-However, the API client implements **caching within a single tick**, so multiple accesses during event processing are efficient.
-
 Next Steps
 ----------
 
