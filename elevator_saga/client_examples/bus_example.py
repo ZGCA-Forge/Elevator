@@ -41,6 +41,7 @@ class ElevatorBusExampleController(ElevatorController):
 
     def on_passenger_call(self, passenger: ProxyPassenger, floor: ProxyFloor, direction: str) -> None:
         self.all_passengers.append(passenger)
+        print(f"乘客 {passenger.id} F{floor.floor} 请求 {passenger.origin} -> {passenger.destination} ({direction})")
         pass
 
     def on_elevator_idle(self, elevator: ProxyElevator) -> None:
@@ -60,10 +61,10 @@ class ElevatorBusExampleController(ElevatorController):
             elevator.go_to_floor(elevator.current_floor - 1)
 
     def on_passenger_board(self, elevator: ProxyElevator, passenger: ProxyPassenger) -> None:
-        pass
+        print(f" 乘客{passenger.id} E{elevator.id}⬆️ F{elevator.current_floor} -> F{passenger.destination}")
 
     def on_passenger_alight(self, elevator: ProxyElevator, passenger: ProxyPassenger, floor: ProxyFloor) -> None:
-        pass
+        print(f" 乘客{passenger.id} E{elevator.id}⬇️ F{floor.floor}")
 
     def on_elevator_passing_floor(self, elevator: ProxyElevator, floor: ProxyFloor, direction: str) -> None:
         pass

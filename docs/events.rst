@@ -277,7 +277,7 @@ Events are generated during tick processing:
                    EventType.ELEVATOR_APPROACHING,
                    {
                        "elevator": elevator.id,
-                       "floor": elevator.target_floor,
+                       "floor": int(round(elevator.position.current_floor_float)),
                        "direction": elevator.target_floor_direction.value
                    }
                )
@@ -487,28 +487,39 @@ Metrics are calculated from passenger data:
 
 .. code-block:: python
 
-   def _calculate_metrics(self) -> MetricsResponse:
+   def _calculate_metrics(self) -> PerformanceMetrics:
        """Calculate performance metrics"""
        completed = [p for p in self.state.passengers.values()
                     if p.status == PassengerStatus.COMPLETED]
 
-       wait_times = [float(p.wait_time) for p in completed]
-       system_times = [float(p.system_time) for p in completed]
+       floor_wait_times = [float(p.floor_wait_time) for p in completed]
+       arrival_wait_times = [float(p.arrival_wait_time) for p in completed]
 
-       return MetricsResponse(
-           done=len(completed),
-           total=len(self.state.passengers),
-           avg_wait=sum(wait_times) / len(wait_times) if wait_times else 0,
-           p95_wait=percentile(wait_times, 95),
-           avg_system=sum(system_times) / len(system_times) if system_times else 0,
-           p95_system=percentile(system_times, 95),
+       def average_excluding_top_percent(data: List[float], exclude_percent: int) -> float:
+           """计算排除掉最长的指定百分比后的平均值"""
+           if not data:
+               return 0.0
+           sorted_data = sorted(data)
+           keep_count = int(len(sorted_data) * (100 - exclude_percent) / 100)
+           if keep_count == 0:
+               return 0.0
+           kept_data = sorted_data[:keep_count]
+           return sum(kept_data) / len(kept_data)
+
+       return PerformanceMetrics(
+           completed_passengers=len(completed),
+           total_passengers=len(self.state.passengers),
+           average_floor_wait_time=sum(floor_wait_times) / len(floor_wait_times) if floor_wait_times else 0,
+           p95_floor_wait_time=average_excluding_top_percent(floor_wait_times, 5),
+           average_arrival_wait_time=sum(arrival_wait_times) / len(arrival_wait_times) if arrival_wait_times else 0,
+           p95_arrival_wait_time=average_excluding_top_percent(arrival_wait_times, 5),
        )
 
 Key metrics:
 
-- **Wait time**: ``pickup_tick - arrive_tick`` (how long passenger waited)
-- **System time**: ``dropoff_tick - arrive_tick`` (total time in system)
-- **P95**: 95th percentile (worst-case for most passengers)
+- **Floor wait time**: ``pickup_tick - arrive_tick`` (在楼层等待的时间，从到达到上电梯)
+- **Arrival wait time**: ``dropoff_tick - arrive_tick`` (总等待时间，从到达到下电梯)
+- **P95 metrics**: 排除掉最长的5%时间后，计算剩余95%的平均值
 
 Summary
 -------

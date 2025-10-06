@@ -257,10 +257,10 @@ Tracks simulation performance:
    class PerformanceMetrics(SerializableModel):
        completed_passengers: int = 0
        total_passengers: int = 0
-       average_wait_time: float = 0.0
-       p95_wait_time: float = 0.0        # 95th percentile
-       average_system_time: float = 0.0
-       p95_system_time: float = 0.0      # 95th percentile
+       average_floor_wait_time: float = 0.0
+       p95_floor_wait_time: float = 0.0        # 95th percentile
+       average_arrival_wait_time: float = 0.0
+       p95_arrival_wait_time: float = 0.0      # 95th percentile
 
 Properties:
 

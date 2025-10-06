@@ -6,7 +6,7 @@ Unified API Client for Elevator Saga
 import json
 import urllib.error
 import urllib.request
-from typing import Any, Dict, Optional, Union
+from typing import Any, Dict, Optional
 
 from elevator_saga.core.models import (
     ElevatorState,
@@ -63,16 +63,8 @@ class ElevatorAPIClient:
             # 使用服务端返回的metrics数据
             metrics_data = response_data.get("metrics", {})
             if metrics_data:
-                # 转换为PerformanceMetrics格式
-                metrics = PerformanceMetrics(
-                    completed_passengers=metrics_data.get("done", 0),
-                    total_passengers=metrics_data.get("total", 0),
-                    average_wait_time=metrics_data.get("avg_wait", 0),
-                    p95_wait_time=metrics_data.get("p95_wait", 0),
-                    average_system_time=metrics_data.get("avg_system", 0),
-                    p95_system_time=metrics_data.get("p95_system", 0),
-                    # total_energy_consumption=metrics_data.get("energy_total", 0),
-                )
+                # 直接从字典创建PerformanceMetrics对象
+                metrics = PerformanceMetrics.from_dict(metrics_data)
             else:
                 metrics = PerformanceMetrics()
 
@@ -131,7 +123,7 @@ class ElevatorAPIClient:
         else:
             raise RuntimeError(f"Step failed: {response_data.get('error')}")
 
-    def send_elevator_command(self, command: Union[GoToFloorCommand]) -> bool:
+    def send_elevator_command(self, command: GoToFloorCommand) -> bool:
         """发送电梯命令"""
         endpoint = self._get_elevator_endpoint(command)
         debug_log(
@@ -156,7 +148,7 @@ class ElevatorAPIClient:
             debug_log(f"Go to floor failed: {e}")
             return False
 
-    def _get_elevator_endpoint(self, command: Union[GoToFloorCommand]) -> str:
+    def _get_elevator_endpoint(self, command: GoToFloorCommand) -> str:
         """获取电梯命令端点"""
         base = f"/api/elevators/{command.elevator_id}"
 

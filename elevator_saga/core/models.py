@@ -174,13 +174,13 @@ class PassengerInfo(SerializableModel):
             return PassengerStatus.WAITING
 
     @property
-    def wait_time(self) -> int:
-        """等待时间"""
+    def floor_wait_time(self) -> int:
+        """在楼层等待的时间（从到达到上电梯）"""
         return self.pickup_tick - self.arrive_tick
 
     @property
-    def system_time(self) -> int:
-        """系统时间（总时间）"""
+    def arrival_wait_time(self) -> int:
+        """总等待时间（从到达到下电梯）"""
         return self.dropoff_tick - self.arrive_tick
 
     @property
@@ -331,10 +331,10 @@ class PerformanceMetrics(SerializableModel):
 
     completed_passengers: int = 0
     total_passengers: int = 0
-    average_wait_time: float = 0.0
-    p95_wait_time: float = 0.0
-    average_system_time: float = 0.0
-    p95_system_time: float = 0.0
+    average_floor_wait_time: float = 0.0
+    p95_floor_wait_time: float = 0.0
+    average_arrival_wait_time: float = 0.0
+    p95_arrival_wait_time: float = 0.0
     # total_energy_consumption: float = 0.0
 
     @property

@@ -176,7 +176,7 @@ Dynamic proxy for ``PassengerInfo`` that provides access to passenger informatio
 
    if passenger.status == PassengerStatus.IN_ELEVATOR:
        print(f"In elevator {passenger.elevator_id}")
-       print(f"Waited {passenger.wait_time} ticks")
+       print(f"Waited {passenger.floor_wait_time} ticks")
 
 Read-Only Protection
 ~~~~~~~~~~~~~~~~~~~~

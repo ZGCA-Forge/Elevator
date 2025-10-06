@@ -352,9 +352,7 @@ class ElevatorController(ABC):
             if elevator_id is not None and floor_id is not None and direction is not None:
                 elevator_proxy = ProxyElevator(elevator_id, self.api_client)
                 floor_proxy = ProxyFloor(floor_id, self.api_client)
-                # 服务端发送的direction是字符串，直接使用
-                direction_str = direction if isinstance(direction, str) else direction.value
-                self.on_elevator_passing_floor(elevator_proxy, floor_proxy, direction_str)
+                self.on_elevator_passing_floor(elevator_proxy, floor_proxy, direction)
 
         elif event.type == EventType.ELEVATOR_APPROACHING:
             elevator_id = event.data.get("elevator")
@@ -363,9 +361,7 @@ class ElevatorController(ABC):
             if elevator_id is not None and floor_id is not None and direction is not None:
                 elevator_proxy = ProxyElevator(elevator_id, self.api_client)
                 floor_proxy = ProxyFloor(floor_id, self.api_client)
-                # 服务端发送的direction是字符串，直接使用
-                direction_str = direction if isinstance(direction, str) else direction.value
-                self.on_elevator_approaching(elevator_proxy, floor_proxy, direction_str)
+                self.on_elevator_approaching(elevator_proxy, floor_proxy, direction)
 
         elif event.type == EventType.PASSENGER_BOARD:
             elevator_id = event.data.get("elevator")

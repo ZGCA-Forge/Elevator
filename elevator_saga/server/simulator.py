@@ -22,6 +22,7 @@ from elevator_saga.core.models import (
     FloorState,
     PassengerInfo,
     PassengerStatus,
+    PerformanceMetrics,
     SerializableModel,
     SimulationEvent,
     SimulationState,
@@ -90,19 +91,6 @@ def json_response(data: Any, status: int = 200) -> Response | tuple[Response, in
 
 
 @dataclass
-class MetricsResponse(SerializableModel):
-    """性能指标响应"""
-
-    done: int
-    total: int
-    avg_wait: float
-    p95_wait: float
-    avg_system: float
-    p95_system: float
-    energy_total: float
-
-
-@dataclass
 class PassengerSummary(SerializableModel):
     """乘客摘要"""
 
@@ -120,7 +108,7 @@ class SimulationStateResponse(SerializableModel):
     elevators: List[ElevatorState]
     floors: List[FloorState]
     passengers: Dict[int, PassengerInfo]
-    metrics: MetricsResponse
+    metrics: PerformanceMetrics
 
 
 class ElevatorSimulation:
@@ -292,33 +280,32 @@ class ElevatorSimulation:
         # Return events generated this tick
         return self.state.events[events_start:]
 
-    def _process_passenger_in(self) -> None:
-        for elevator in self.elevators:
-            current_floor = elevator.current_floor
-            # 处于Stopped状态，方向也已经清空，说明没有调度。
-            floor = self.floors[current_floor]
-            passengers_to_board: List[int] = []
-            available_capacity = elevator.max_capacity - len(elevator.passengers)
-            # Board passengers going up (if up indicator is on or no direction set)
-            if elevator.target_floor_direction == Direction.UP:
-                passengers_to_board.extend(floor.up_queue[:available_capacity])
-                floor.up_queue = floor.up_queue[available_capacity:]
+    def _process_passenger_in(self, elevator: ElevatorState) -> None:
+        current_floor = elevator.current_floor
+        # 处于Stopped状态，方向也已经清空，说明没有调度。
+        floor = self.floors[current_floor]
+        passengers_to_board: List[int] = []
+        available_capacity = elevator.max_capacity - len(elevator.passengers)
+        # Board passengers going up (if up indicator is on or no direction set)
+        if elevator.target_floor_direction == Direction.UP:
+            passengers_to_board.extend(floor.up_queue[:available_capacity])
+            floor.up_queue = floor.up_queue[available_capacity:]
 
-            # Board passengers going down (if down indicator is on or no direction set)
-            if elevator.target_floor_direction == Direction.DOWN:
-                passengers_to_board.extend(floor.down_queue[:available_capacity])
-                floor.down_queue = floor.down_queue[available_capacity:]
+        # Board passengers going down (if down indicator is on or no direction set)
+        if elevator.target_floor_direction == Direction.DOWN:
+            passengers_to_board.extend(floor.down_queue[:available_capacity])
+            floor.down_queue = floor.down_queue[available_capacity:]
 
-            # Process boarding
-            for passenger_id in passengers_to_board:
-                passenger = self.passengers[passenger_id]
-                passenger.pickup_tick = self.tick
-                passenger.elevator_id = elevator.id
-                elevator.passengers.append(passenger_id)
-                self._emit_event(
-                    EventType.PASSENGER_BOARD,
-                    {"elevator": elevator.id, "floor": current_floor, "passenger": passenger_id},
-                )
+        # Process boarding
+        for passenger_id in passengers_to_board:
+            passenger = self.passengers[passenger_id]
+            passenger.pickup_tick = self.tick
+            passenger.elevator_id = elevator.id
+            elevator.passengers.append(passenger_id)
+            self._emit_event(
+                EventType.PASSENGER_BOARD,
+                {"elevator": elevator.id, "floor": current_floor, "passenger": passenger_id},
+            )
 
     def _update_elevator_status(self) -> None:
         """更新电梯运行状态"""
@@ -331,7 +318,7 @@ class ElevatorSimulation:
                 if elevator.next_target_floor is not None:
                     self._set_elevator_target_floor(elevator, elevator.next_target_floor)
 
-                    self._process_passenger_in()
+                    self._process_passenger_in(elevator)
                     elevator.next_target_floor = None
                 else:
                     continue
@@ -411,7 +398,7 @@ class ElevatorSimulation:
                         EventType.ELEVATOR_APPROACHING,
                         {
                             "elevator": elevator.id,
-                            "floor": elevator.target_floor,
+                            "floor": int(round(elevator.position.current_floor_float)),
                             "direction": elevator.target_floor_direction.value,
                         },
                     )
@@ -547,41 +534,45 @@ class ElevatorSimulation:
                 metrics=metrics,
             )
 
-    def _calculate_metrics(self) -> MetricsResponse:
+    def _calculate_metrics(self) -> PerformanceMetrics:
         """Calculate performance metrics"""
         # 直接从state中筛选已完成的乘客
         completed = [p for p in self.state.passengers.values() if p.status == PassengerStatus.COMPLETED]
 
         total_passengers = len(self.state.passengers)
         if not completed:
-            return MetricsResponse(
-                done=0,
-                total=total_passengers,
-                avg_wait=0,
-                p95_wait=0,
-                avg_system=0,
-                p95_system=0,
-                energy_total=sum(e.energy_consumed for e in self.elevators),
+            return PerformanceMetrics(
+                completed_passengers=0,
+                total_passengers=total_passengers,
+                average_floor_wait_time=0,
+                p95_floor_wait_time=0,
+                average_arrival_wait_time=0,
+                p95_arrival_wait_time=0,
             )
 
-        wait_times = [float(p.wait_time) for p in completed]
-        system_times = [float(p.system_time) for p in completed]
+        floor_wait_times = [float(p.floor_wait_time) for p in completed]
+        arrival_wait_times = [float(p.arrival_wait_time) for p in completed]
 
-        def percentile(data: List[float], p: int) -> float:
+        def average_excluding_top_percent(data: List[float], exclude_percent: int) -> float:
+            """计算排除掉最长的指定百分比后的平均值"""
             if not data:
                 return 0.0
             sorted_data = sorted(data)
-            index = int(len(sorted_data) * p / 100)
-            return sorted_data[min(index, len(sorted_data) - 1)]
+            # 计算要保留的数据数量（排除掉最长的 exclude_percent）
+            keep_count = int(len(sorted_data) * (100 - exclude_percent) / 100)
+            if keep_count == 0:
+                return 0.0
+            # 只保留前 keep_count 个数据，排除最长的部分
+            kept_data = sorted_data[:keep_count]
+            return sum(kept_data) / len(kept_data)
 
-        return MetricsResponse(
-            done=len(completed),
-            total=total_passengers,
-            avg_wait=sum(wait_times) / len(wait_times) if wait_times else 0,
-            p95_wait=percentile(wait_times, 95),
-            avg_system=sum(system_times) / len(system_times) if system_times else 0,
-            p95_system=percentile(system_times, 95),
-            energy_total=sum(e.energy_consumed for e in self.elevators),
+        return PerformanceMetrics(
+            completed_passengers=len(completed),
+            total_passengers=total_passengers,
+            average_floor_wait_time=sum(floor_wait_times) / len(floor_wait_times) if floor_wait_times else 0,
+            p95_floor_wait_time=average_excluding_top_percent(floor_wait_times, 5),
+            average_arrival_wait_time=sum(arrival_wait_times) / len(arrival_wait_times) if arrival_wait_times else 0,
+            p95_arrival_wait_time=average_excluding_top_percent(arrival_wait_times, 5),
         )
 
     def get_events(self, since_tick: int = 0) -> List[SimulationEvent]:
