@@ -6,5 +6,5 @@ A Python implementation of the Elevator Saga game with event-driven architecture
 realistic elevator dispatch algorithm development and testing.
 """
 
-__version__ = "0.0.5"
+__version__ = "0.0.6"
 __author__ = "ZGCA Team"
