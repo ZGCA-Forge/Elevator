@@ -8,7 +8,7 @@ import uuid
 from dataclasses import asdict, dataclass, field
 from datetime import datetime
 from enum import Enum
-from typing import Any, Callable, Dict, List, Optional, Tuple, Type, TypeVar, Union
+from typing import Any, Dict, List, Optional, Tuple, Type, TypeVar, Union
 
 # 类型变量
 T = TypeVar("T", bound="SerializableModel")
@@ -55,6 +55,7 @@ class EventType(Enum):
     IDLE = "idle"
     PASSENGER_BOARD = "passenger_board"
     PASSENGER_ALIGHT = "passenger_alight"
+    ELEVATOR_MOVE = "elevator_move"  # 电梯移动事件
 
 
 class SerializableModel:
@@ -113,7 +114,7 @@ class Position(SerializableModel):
 
     @property
     def current_floor_float(self) -> float:
-        return self.current_floor + self.floor_up_position / 10
+        return round(self.current_floor + self.floor_up_position / 10, 1)
 
     def floor_up_position_add(self, num: int) -> int:
         self.floor_up_position += num

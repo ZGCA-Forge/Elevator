@@ -10,7 +10,7 @@ import threading
 from dataclasses import dataclass
 from enum import Enum
 from pathlib import Path
-from typing import Any, Dict, List, Optional, cast
+from typing import Any, Dict, List, cast
 
 from flask import Flask, Response, request
 
@@ -274,7 +274,7 @@ class ElevatorSimulation:
         # 2. Move elevators
         self._move_elevators()
 
-        # 3. Process elevator stops and passenger boarding/alighting
+        # 3. Process elevator stops and passenger alighting
         self._process_elevator_stops()
 
         # Return events generated this tick
@@ -310,7 +310,6 @@ class ElevatorSimulation:
     def _update_elevator_status(self) -> None:
         """更新电梯运行状态"""
         for elevator in self.elevators:
-            current_floor = elevator.position.current_floor
             target_floor = elevator.target_floor
             old_status = elevator.run_status.value
             # 没有移动方向，说明电梯已经到达目标楼层
@@ -378,6 +377,7 @@ class ElevatorSimulation:
 
             # 根据状态和方向调整移动距离
             elevator.last_tick_direction = elevator.target_floor_direction
+            old_position = elevator.position.current_floor_float
             if elevator.target_floor_direction == Direction.UP:
                 new_floor = elevator.position.floor_up_position_add(movement_speed)
             elif elevator.target_floor_direction == Direction.DOWN:
@@ -385,6 +385,19 @@ class ElevatorSimulation:
             else:
                 # 之前的状态已经是到站了，清空上一次到站的方向
                 pass
+
+            # 发送电梯移动事件
+            if elevator.target_floor_direction != Direction.STOPPED:
+                self._emit_event(
+                    EventType.ELEVATOR_MOVE,
+                    {
+                        "elevator": elevator.id,
+                        "from_position": old_position,
+                        "to_position": elevator.position.current_floor_float,
+                        "direction": elevator.target_floor_direction.value,
+                        "status": elevator.run_status.value,
+                    },
+                )
 
             # 移动后检测是否即将到站，从匀速状态切换到减速
             if elevator.run_status == ElevatorStatus.CONSTANT_SPEED:
@@ -465,7 +478,6 @@ class ElevatorSimulation:
         [SERVER-DEBUG] 电梯 E0 被设定为前往 F1
         说明电梯处于stop状态，这个tick直接采用下一个目的地运行了
         """
-        original_target_floor = elevator.target_floor
         elevator.position.target_floor = floor
         server_debug_log(f"电梯 E{elevator.id} 被设定为前往 F{floor}")
         new_target_floor_should_accel = self._should_start_deceleration(elevator)

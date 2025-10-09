@@ -7,7 +7,7 @@ import os
 import time
 from abc import ABC, abstractmethod
 from pprint import pprint
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List
 
 from elevator_saga.client.api_client import ElevatorAPIClient
 from elevator_saga.client.proxy_models import ProxyElevator, ProxyFloor, ProxyPassenger
@@ -171,6 +171,22 @@ class ElevatorController(ABC):
         """
         pass
 
+    @abstractmethod
+    def on_elevator_move(
+        self, elevator: ProxyElevator, from_position: float, to_position: float, direction: str, status: str
+    ) -> None:
+        """
+        电梯移动时的回调 - 可选实现
+
+        Args:
+            elevator: 电梯代理对象
+            from_position: 起始位置（浮点数表示楼层）
+            to_position: 目标位置（浮点数表示楼层）
+            direction: 移动方向
+            status: 电梯运行状态
+        """
+        pass
+
     def _internal_init(self, elevators: List[Any], floors: List[Any]) -> None:
         """内部初始化方法"""
         self.elevators = elevators
@@ -218,7 +234,7 @@ class ElevatorController(ABC):
             # 获取初始状态并初始化，默认从0开始
             try:
                 state = self.api_client.get_state()
-            except ConnectionResetError as ex:
+            except ConnectionResetError as _:  # noqa: F841
                 print(f"模拟器可能并没有开启，请检查模拟器是否启动 {self.api_client.base_url}")
                 os._exit(1)
             if state.tick > 0:
@@ -380,6 +396,22 @@ class ElevatorController(ABC):
                 passenger_proxy = ProxyPassenger(passenger_id, self.api_client)
                 floor_proxy = ProxyFloor(floor_id, self.api_client)
                 self.on_passenger_alight(elevator_proxy, passenger_proxy, floor_proxy)
+
+        elif event.type == EventType.ELEVATOR_MOVE:
+            elevator_id = event.data.get("elevator")
+            from_position = event.data.get("from_position")
+            to_position = event.data.get("to_position")
+            direction = event.data.get("direction")
+            status = event.data.get("status")
+            if (
+                elevator_id is not None
+                and from_position is not None
+                and to_position is not None
+                and direction is not None
+                and status is not None
+            ):
+                elevator_proxy = ProxyElevator(elevator_id, self.api_client)
+                self.on_elevator_move(elevator_proxy, from_position, to_position, direction, status)
 
     def _reset_and_reinit(self) -> None:
         """重置并重新初始化"""

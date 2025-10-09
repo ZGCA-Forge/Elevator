@@ -72,6 +72,11 @@ class ElevatorBusExampleController(ElevatorController):
     def on_elevator_approaching(self, elevator: ProxyElevator, floor: ProxyFloor, direction: str) -> None:
         pass
 
+    def on_elevator_move(
+        self, elevator: ProxyElevator, from_position: float, to_position: float, direction: str, status: str
+    ) -> None:
+        pass
+
 
 if __name__ == "__main__":
     algorithm = ElevatorBusExampleController()

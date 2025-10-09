@@ -202,7 +202,7 @@ Event System
 Event Types
 ~~~~~~~~~~~
 
-The simulation generates 8 types of events defined in ``EventType`` enum:
+The simulation generates 9 types of events defined in ``EventType`` enum:
 
 .. code-block:: python
 
@@ -215,6 +215,7 @@ The simulation generates 8 types of events defined in ``EventType`` enum:
        IDLE = "idle"
        PASSENGER_BOARD = "passenger_board"
        PASSENGER_ALIGHT = "passenger_alight"
+       ELEVATOR_MOVE = "elevator_move"
 
 Event Generation
 ~~~~~~~~~~~~~~~~
@@ -259,6 +260,19 @@ Events are generated during tick processing:
    def _move_elevators(self) -> None:
        for elevator in self.elevators:
            # ... movement logic ...
+
+           # Elevator moves
+           if elevator.target_floor_direction != Direction.STOPPED:
+               self._emit_event(
+                   EventType.ELEVATOR_MOVE,
+                   {
+                       "elevator": elevator.id,
+                       "from_position": old_position,
+                       "to_position": elevator.position.current_floor_float,
+                       "direction": elevator.target_floor_direction.value,
+                       "status": elevator.run_status.value,
+                   }
+               )
 
            # Passing a floor
            if old_floor != new_floor and new_floor != target_floor:
@@ -362,6 +376,14 @@ The ``ElevatorController`` base class automatically routes events to handler met
                elif event.type == EventType.IDLE:
                    elevator = self.elevators[event.data["elevator"]]
                    self.on_elevator_idle(elevator)
+
+               elif event.type == EventType.ELEVATOR_MOVE:
+                   elevator = self.elevators[event.data["elevator"]]
+                   from_position = event.data["from_position"]
+                   to_position = event.data["to_position"]
+                   direction = event.data["direction"]
+                   status = event.data["status"]
+                   self.on_elevator_move(elevator, from_position, to_position, direction, status)
 
                # ... other event types ...
 
