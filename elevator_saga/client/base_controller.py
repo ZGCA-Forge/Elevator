@@ -171,7 +171,7 @@ class ElevatorController(ABC):
         """
         pass
 
-    @abstractmethod
+    # @abstractmethod  为了兼容性暂不强制要求elevator_move必须实现
     def on_elevator_move(
         self, elevator: ProxyElevator, from_position: float, to_position: float, direction: str, status: str
     ) -> None:

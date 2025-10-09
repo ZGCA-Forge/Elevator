@@ -284,6 +284,7 @@ The controller provides these event handlers:
 - ``on_passenger_alight(elevator, passenger, floor)``: Passenger alights
 - ``on_elevator_passing_floor(elevator, floor, direction)``: Elevator passes floor
 - ``on_elevator_approaching(elevator, floor, direction)``: Elevator about to arrive
+- ``on_elevator_move(elevator, from_position, to_position, direction, status)``: Elevator moves
 
 Complete Example
 ----------------

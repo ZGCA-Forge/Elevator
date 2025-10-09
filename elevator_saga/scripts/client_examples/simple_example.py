@@ -138,6 +138,17 @@ class ElevatorBusController(ElevatorController):
                 elevator.go_to_floor(elevator.target_floor + 1, immediate=True)
                 print(f" 不让0号电梯上行停站，设定新目标楼层 {elevator.target_floor + 1}")
 
+    def on_elevator_move(
+        self, elevator: ProxyElevator, from_position: float, to_position: float, direction: str, status: str
+    ) -> None:
+        """
+        电梯移动时的回调
+        可以在这里记录电梯移动信息，用于调试或性能分析
+        """
+        # 取消注释以显示电梯移动信息
+        # print(f"🚀 电梯 E{elevator.id} 移动: {from_position:.1f} -> {to_position:.1f} ({direction}, {status})")
+        pass
+
 
 if __name__ == "__main__":
     algorithm = ElevatorBusController(debug=True)
