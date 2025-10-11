@@ -457,6 +457,7 @@ class ElevatorSimulation:
                 passenger = self.passengers[passenger_id]
                 if passenger.destination == current_floor:
                     passenger.dropoff_tick = self.tick
+                    passenger.arrived = True
                     passengers_to_remove.append(passenger_id)
 
             # Remove passengers who alighted
