@@ -162,12 +162,13 @@ class PassengerInfo(SerializableModel):
     arrive_tick: int
     pickup_tick: int = 0
     dropoff_tick: int = 0
+    arrived: bool = False
     elevator_id: Optional[int] = None
 
     @property
     def status(self) -> PassengerStatus:
         """乘客状态"""
-        if self.dropoff_tick > 0:
+        if self.arrived:
             return PassengerStatus.COMPLETED
         elif self.pickup_tick > 0:
             return PassengerStatus.IN_ELEVATOR
