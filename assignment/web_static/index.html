@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <title>电梯调度可视化看板</title>
+    <link rel="stylesheet" href="/static/style.css" />
+  </head>
+<body>
+    <header>
+      <div class="header-left">
+        <h1>电梯调度可视化看板</h1>
+        <div id="meta">
+          <span id="tick">Tick: --</span>
+          <span id="last-update">上次更新：--</span>
+        </div>
+      </div>
+      <div id="controls">
+        <span id="controller-status" class="status status-idle">未运行</span>
+        <button id="toggle-controller">启动调度</button>
+      </div>
+    </header>
+    <main>
+      <section>
+        <h2>电梯状态</h2>
+        <div id="elevator-cards" class="card-container"></div>
+      </section>
+      <section>
+        <h2>楼层排队情况</h2>
+        <table id="floor-table">
+          <thead>
+            <tr>
+              <th>楼层</th>
+              <th>上行等待</th>
+              <th>下行等待</th>
+              <th>总计</th>
+            </tr>
+          </thead>
+          <tbody></tbody>
+        </table>
+      </section>
+      <section>
+        <h2>关键指标</h2>
+        <ul id="metrics-list"></ul>
+      </section>
+    </main>
+    <footer>
+      <span>数据来源：http://127.0.0.1:8000</span>
+    </footer>
+    <script src="/static/main.js"></script>
+  </body>
+</html>

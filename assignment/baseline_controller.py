@@ -9,8 +9,12 @@
 """
 from __future__ import annotations
 
-from dataclasses import dataclass, field
+import os
+import time
+from dataclasses import dataclass
 from typing import Dict, List, Optional, Tuple
+
+from pprint import pprint
 
 from elevator_saga.client.base_controller import ElevatorController
 from elevator_saga.client.proxy_models import ProxyElevator, ProxyFloor, ProxyPassenger
@@ -43,12 +47,26 @@ class GreedyNearestController(ElevatorController):
     - 当楼内等待乘客为空时，电梯回到首层待命
     """
 
-    def __init__(self, server_url: str = "http://127.0.0.1:8000", debug: bool = False):
+    def __init__(
+        self,
+        server_url: str = "http://127.0.0.1:8000",
+        debug: bool = False,
+        tick_delay: Optional[float] = None,
+    ):
         super().__init__(server_url, debug)
         self.waiting_requests: Dict[int, PendingRequest] = {}
         self.last_known_tick: int = 0
         self.dispatch_history: Dict[int, List[int]] = {}
         self.default_idle_floor: int = 0
+        # 从环境变量读取 tick 间隔，默认 0.2s 便于可视化观察
+        if tick_delay is not None:
+            self.tick_delay = tick_delay
+        else:
+            env_value = os.environ.get("ASSIGNMENT_TICK_DELAY", "0.2")
+            try:
+                self.tick_delay = max(0.0, float(env_value))
+            except ValueError:
+                self.tick_delay = 0.2
 
     # ========= 生命周期回调 ========= #
     def on_init(self, elevators: List[ProxyElevator], floors: List[ProxyFloor]) -> None:
@@ -69,7 +87,67 @@ class GreedyNearestController(ElevatorController):
     def on_event_execute_end(
         self, tick: int, events: List[SimulationEvent], elevators: List[ProxyElevator], floors: List[ProxyFloor]
     ) -> None:
-        pass
+        # 通过短暂休眠让可视化界面有足够时间采样状态
+        if self.tick_delay > 0:
+            time.sleep(self.tick_delay)
+
+    # ========= 自定义运行循环，避免自动重置 ========= #
+    def _run_event_driven_simulation(self) -> None:  # type: ignore[override]
+        try:
+            state = self.api_client.get_state()
+            if state.tick > 0:
+                self.api_client.reset()
+                time.sleep(0.3)
+                state = self.api_client.get_state()
+            self._update_wrappers(state, init=True)
+            self._update_traffic_info()
+            refresh_attempts = 0
+            while self.current_traffic_max_tick == 0 and refresh_attempts < 3:
+                print("模拟器接收到的最大tick时间为0，尝试请求下一轮测试...")
+                if not self.api_client.next_traffic_round(full_reset=True):
+                    break
+                time.sleep(0.3)
+                state = self.api_client.get_state(force_reload=True)
+                self._update_wrappers(state)
+                self._update_traffic_info()
+                refresh_attempts += 1
+            if self.current_traffic_max_tick == 0:
+                print("未获取到可用测试案例，请稍后重试。")
+                return
+
+            self._internal_init(self.elevators, self.floors)
+            self.api_client.mark_tick_processed()
+
+            while self.is_running:
+                if self.current_tick >= self.current_traffic_max_tick:
+                    break
+
+                step_response = self.api_client.step(1)
+                self.current_tick = step_response.tick
+                events = step_response.events
+
+                state = self.api_client.get_state()
+                self._update_wrappers(state)
+
+                self.on_event_execute_start(self.current_tick, events, self.elevators, self.floors)
+
+                if events:
+                    for event in events:
+                        self._handle_single_event(event)
+
+                state = self.api_client.get_state()
+                self._update_wrappers(state)
+
+                self.on_event_execute_end(self.current_tick, events, self.elevators, self.floors)
+                self.api_client.mark_tick_processed()
+
+                if self.current_tick >= self.current_traffic_max_tick:
+                    pprint(state.metrics.to_dict())
+                    break
+
+        except Exception as exc:
+            print(f"模拟运行错误: {exc}")
+            raise
 
     # ========= 事件回调 ========= #
     def on_passenger_call(self, passenger: ProxyPassenger, floor: ProxyFloor, direction: str) -> None:
@@ -157,4 +235,3 @@ class GreedyNearestController(ElevatorController):
             return None
         unclaimed.sort(key=lambda req: (req.priority_key(elevator.current_floor), req.arrive_tick))
         return unclaimed[0]
-

@@ -9,7 +9,24 @@ set -euo pipefail
 PROJECT_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 VENV_DIR="${PROJECT_ROOT}/.venv"
 
-if [[ "${1:-}" == "--reinstall" ]]; then
+RUN_DASHBOARD=1
+REINSTALL=0
+
+for arg in "$@"; do
+  case "$arg" in
+    --reinstall)
+      REINSTALL=1
+      ;;
+    --no-dashboard)
+      RUN_DASHBOARD=0
+      ;;
+    *)
+      echo "未知参数: ${arg}"
+      ;;
+  esac
+done
+
+if [[ "${REINSTALL}" -eq 1 ]]; then
   echo "收到 --reinstall 参数，强制重新安装依赖。"
   rm -f "${VENV_DIR}/.deps_installed"
 fi
@@ -42,12 +59,16 @@ else
 fi
 
 echo "启动电梯模拟器..."
-python -m elevator_saga.server.simulator &
+python -m assignment.run_server &
 SIMULATOR_PID=$!
 
 cleanup() {
   echo "关闭电梯模拟器 (PID=${SIMULATOR_PID})..."
   kill "${SIMULATOR_PID}" >/dev/null 2>&1 || true
+  if [[ "${RUN_DASHBOARD}" -eq 1 && -n "${DASHBOARD_PID:-}" ]]; then
+    echo "关闭可视化面板 (PID=${DASHBOARD_PID})..."
+    kill "${DASHBOARD_PID}" >/dev/null 2>&1 || true
+  fi
 }
 trap cleanup EXIT
 
@@ -59,5 +80,17 @@ for i in $(seq 1 10); do
   sleep 1
 done
 
-echo "启动调度算法..."
-python -m assignment.main
+if [[ "${RUN_DASHBOARD}" -eq 1 ]]; then
+  echo "启动可视化面板（http://127.0.0.1:8050）..."
+  python -m assignment.web_dashboard &
+  DASHBOARD_PID=$!
+  sleep 1
+  echo "请在浏览器访问 http://127.0.0.1:8050 并点击“启动调度”按钮开始模拟。"
+  echo "若需退出，请在本终端按 Ctrl+C。"
+  wait "${DASHBOARD_PID}"
+else
+  echo "已禁用可视化面板，可使用 --no-dashboard 参数控制。"
+  echo "直接运行调度算法..."
+  python -m assignment.main
+  echo "调度算法已完成。"
+fi
