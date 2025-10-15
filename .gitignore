@@ -1,6 +1,7 @@
 # ================================
 # Python-related files
 # ================================
+elevator_saga/traffic/test_cases.py
 
 # Compiled Python files
 __pycache__/
