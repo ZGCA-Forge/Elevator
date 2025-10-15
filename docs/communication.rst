@@ -65,6 +65,8 @@ Response format:
          "passengers": [101, 102],
          "max_capacity": 10,
          "run_status": "constant_speed",
+         "energy_consumed": 38.5,
+         "energy_rate": 1.0,
          "..."
        }
      ],
@@ -81,7 +83,8 @@ Response format:
        "avg_wait": 15.2,
        "p95_wait": 30.0,
        "avg_system": 25.5,
-       "p95_system": 45.0
+       "p95_system": 45.0,
+       "total_energy_consumption": 156.0
      }
    }
 

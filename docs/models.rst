@@ -128,6 +128,7 @@ Complete state information for an elevator:
        indicators: ElevatorIndicators = field(default_factory=ElevatorIndicators)
        passenger_destinations: Dict[int, int] = {}  # passenger_id -> floor
        energy_consumed: float = 0.0
+       energy_rate: float = 1.0  # Energy consumption rate per tick
        last_update_tick: int = 0
 
 Key Properties:
@@ -141,6 +142,11 @@ Key Properties:
 - ``is_running``: Whether elevator is in motion
 - ``pressed_floors``: List of destination floors for current passengers
 - ``load_factor``: Current load as fraction of capacity (0.0 to 1.0)
+
+Energy Tracking:
+
+- ``energy_consumed``: Total energy consumed by this elevator during the simulation
+- ``energy_rate``: Energy consumption rate per tick when moving (default: 1.0). Can be customized in traffic configuration files to simulate different elevator types (e.g., older elevators with higher rates, newer energy-efficient elevators with lower rates)
 
 FloorState
 ~~~~~~~~~~
@@ -261,10 +267,15 @@ Tracks simulation performance:
        p95_floor_wait_time: float = 0.0        # 95th percentile
        average_arrival_wait_time: float = 0.0
        p95_arrival_wait_time: float = 0.0      # 95th percentile
+       total_energy_consumption: float = 0.0   # Total energy consumed by all elevators
 
 Properties:
 
 - ``completion_rate``: Fraction of passengers completed (0.0 to 1.0)
+
+Energy Metrics:
+
+- ``total_energy_consumption``: Sum of energy consumed by all elevators in the system. Each elevator consumes ``energy_rate`` units of energy per tick when moving.
 
 API Models
 ----------
@@ -345,3 +356,75 @@ All models support JSON serialization:
    restored = ElevatorState.from_dict(data)
 
 This enables seamless transmission over HTTP between client and server.
+
+Energy System
+-------------
+
+Overview
+~~~~~~~~
+
+The energy system tracks energy consumption of elevators to help optimize control algorithms for both passenger service and energy efficiency.
+
+How Energy Works
+~~~~~~~~~~~~~~~~
+
+**Energy Consumption:**
+
+- Each elevator has an ``energy_rate`` attribute (default: 1.0)
+- When an elevator moves (any tick where it's not stopped), it consumes energy equal to its ``energy_rate``
+- Energy consumption is independent of speed, direction, or load
+- Total system energy is the sum of all individual elevator energy consumption
+
+**Configuration:**
+
+Energy rates are configured in traffic JSON files via the ``elevator_energy_rates`` field:
+
+.. code-block:: json
+
+   {
+     "building": {
+       "floors": 10,
+       "elevators": 3,
+       "elevator_capacity": 10,
+       "elevator_energy_rates": [1.0, 1.0, 1.2],
+       "scenario": "custom_scenario",
+       "duration": 600
+     },
+     "traffic": []
+   }
+
+In this example, elevators 0 and 1 have standard energy rates (1.0), while elevator 2 consumes 20% more energy (1.2), perhaps representing an older or less efficient unit.
+
+**Use Cases:**
+
+1. **Algorithm Optimization**: Balance passenger wait times against energy consumption
+2. **Heterogeneous Fleets**: Model buildings with elevators of different ages/efficiencies
+3. **Cost Analysis**: Evaluate the energy cost of different control strategies
+4. **Green Building Simulation**: Optimize for minimal energy while maintaining service quality
+
+Example Usage
+~~~~~~~~~~~~~
+
+.. code-block:: python
+
+   # Get current state
+   state = api_client.get_state()
+
+   # Check individual elevator energy
+   for elevator in state.elevators:
+       print(f"Elevator {elevator.id}: {elevator.energy_consumed} units consumed")
+       print(f"  Energy rate: {elevator.energy_rate} units/tick")
+
+   # Check total system energy
+   metrics = state.metrics
+   print(f"Total system energy: {metrics.total_energy_consumption} units")
+   print(f"Completed passengers: {metrics.completed_passengers}")
+
+   # Calculate energy per passenger
+   if metrics.completed_passengers > 0:
+       energy_per_passenger = metrics.total_energy_consumption / metrics.completed_passengers
+       print(f"Energy per passenger: {energy_per_passenger:.2f} units")
+
+**Default Behavior:**
+
+If ``elevator_energy_rates`` is not specified in the traffic file, all elevators default to an energy rate of 1.0, ensuring backward compatibility with existing traffic files.

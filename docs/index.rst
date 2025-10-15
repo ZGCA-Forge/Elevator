@@ -28,7 +28,9 @@ Features
 
 🔌 **Client-Server Model**: Separate simulation server from control logic for clean architecture
 
-📊 **Performance Metrics**: Track wait times, system times, and completion rates
+📊 **Performance Metrics**: Track wait times, system times, completion rates, and energy consumption
+
+⚡ **Energy Tracking**: Monitor and optimize energy consumption with configurable per-elevator energy rates
 
 🎯 **Flexible Control**: Implement your own algorithms using a simple controller interface
 
