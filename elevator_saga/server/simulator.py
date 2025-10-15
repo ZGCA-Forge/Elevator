@@ -180,6 +180,14 @@ class ElevatorSimulation:
                 building_config["elevators"], building_config["floors"], building_config["elevator_capacity"]
             )
             self.reset()
+
+            # 设置电梯能耗率
+            elevator_energy_rates = building_config.get("elevator_energy_rates", [1.0] * building_config["elevators"])
+            for i, elevator in enumerate(self.state.elevators):
+                if i < len(elevator_energy_rates):
+                    elevator.energy_rate = elevator_energy_rates[i]
+                    server_debug_log(f"电梯 E{elevator.id} 能耗率设置为: {elevator.energy_rate}")
+
             self.max_duration_ticks = building_config["duration"]
             traffic_data: list[Dict[str, Any]] = file_data["traffic"]
             traffic_data.sort(key=lambda t: cast(int, t["tick"]))
@@ -380,8 +388,12 @@ class ElevatorSimulation:
             old_position = elevator.position.current_floor_float
             if elevator.target_floor_direction == Direction.UP:
                 new_floor = elevator.position.floor_up_position_add(movement_speed)
+                # 电梯移动时增加能耗，每tick增加电梯的能耗率
+                elevator.energy_consumed += elevator.energy_rate
             elif elevator.target_floor_direction == Direction.DOWN:
                 new_floor = elevator.position.floor_up_position_add(-movement_speed)
+                # 电梯移动时增加能耗，每tick增加电梯的能耗率
+                elevator.energy_consumed += elevator.energy_rate
             else:
                 # 之前的状态已经是到站了，清空上一次到站的方向
                 pass
@@ -435,7 +447,6 @@ class ElevatorSimulation:
                 self._emit_event(
                     EventType.STOPPED_AT_FLOOR, {"elevator": elevator.id, "floor": new_floor, "reason": "move_reached"}
                 )
-            # elevator.energy_consumed += abs(direction * elevator.speed_pre_tick) * 0.5
 
     def _process_elevator_stops(self) -> None:
         """
@@ -553,6 +564,10 @@ class ElevatorSimulation:
         completed = [p for p in self.state.passengers.values() if p.status == PassengerStatus.COMPLETED]
 
         total_passengers = len(self.state.passengers)
+
+        # 计算总能耗
+        total_energy = sum(elevator.energy_consumed for elevator in self.state.elevators)
+
         if not completed:
             return PerformanceMetrics(
                 completed_passengers=0,
@@ -561,6 +576,7 @@ class ElevatorSimulation:
                 p95_floor_wait_time=0,
                 average_arrival_wait_time=0,
                 p95_arrival_wait_time=0,
+                total_energy_consumption=total_energy,
             )
 
         floor_wait_times = [float(p.floor_wait_time) for p in completed]
@@ -586,6 +602,7 @@ class ElevatorSimulation:
             p95_floor_wait_time=average_excluding_top_percent(floor_wait_times, 5),
             average_arrival_wait_time=sum(arrival_wait_times) / len(arrival_wait_times) if arrival_wait_times else 0,
             p95_arrival_wait_time=average_excluding_top_percent(arrival_wait_times, 5),
+            total_energy_consumption=total_energy,
         )
 
     def get_events(self, since_tick: int = 0) -> List[SimulationEvent]:

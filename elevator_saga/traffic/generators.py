@@ -290,7 +290,7 @@ def generate_fire_evacuation_traffic(
     for floor in range(1, floors):
         # 每层随机数量的人需要疏散
         num_people = random.randint(people_per_floor[0], people_per_floor[1])
-        for i in range(num_people):
+        for _ in range(num_people):
             # 在10个tick内陆续到达，模拟疏散的紧急性
             arrival_tick = alarm_tick + random.randint(0, min(10, duration - alarm_tick - 1))
             if arrival_tick < duration:
@@ -791,10 +791,12 @@ def generate_traffic_file(scenario: str, output_file: str, scale: Optional[str] 
     traffic_data = generator_func(**generator_params)
 
     # 准备building配置
+    num_elevators = params["elevators"]
     building_config = {
         "floors": params["floors"],
-        "elevators": params["elevators"],
+        "elevators": num_elevators,
         "elevator_capacity": params["elevator_capacity"],
+        "elevator_energy_rates": [1.0] * num_elevators,  # 每台电梯的能耗率，默认为1.0
         "scenario": scenario,
         "scale": scale,
         "description": f"{config['description']} ({scale}规模)",
@@ -835,7 +837,7 @@ def generate_scaled_traffic_files(
         if custom_building:
             floors = custom_building.get("floors", BUILDING_SCALES[scale]["floors"][0])
             elevators = custom_building.get("elevators", BUILDING_SCALES[scale]["elevators"][0])
-            elevator_capacity = custom_building.get("capacity", BUILDING_SCALES[scale]["capacity"][0])
+            _elevator_capacity = custom_building.get("capacity", BUILDING_SCALES[scale]["capacity"][0])
 
             # 重新确定规模
             detected_scale = determine_building_scale(floors, elevators)

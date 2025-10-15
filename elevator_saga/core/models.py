@@ -211,6 +211,7 @@ class ElevatorState(SerializableModel):
     indicators: ElevatorIndicators = field(default_factory=ElevatorIndicators)
     passenger_destinations: Dict[int, int] = field(default_factory=dict)  # 乘客ID -> 目的地楼层映射
     energy_consumed: float = 0.0
+    energy_rate: float = 1.0  # 能耗率：每tick消耗的能量单位
     last_update_tick: int = 0
 
     @property
@@ -337,7 +338,7 @@ class PerformanceMetrics(SerializableModel):
     p95_floor_wait_time: float = 0.0
     average_arrival_wait_time: float = 0.0
     p95_arrival_wait_time: float = 0.0
-    # total_energy_consumption: float = 0.0
+    total_energy_consumption: float = 0.0
 
     @property
     def completion_rate(self) -> float:
@@ -345,13 +346,6 @@ class PerformanceMetrics(SerializableModel):
         if self.total_passengers == 0:
             return 0.0
         return self.completed_passengers / self.total_passengers
-
-    # @property
-    # def energy_per_passenger(self) -> float:
-    #     """每位乘客能耗"""
-    #     if self.completed_passengers == 0:
-    #         return 0.0
-    #     return self.total_energy_consumption / self.completed_passengers
 
 
 @dataclass
