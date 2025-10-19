@@ -83,6 +83,7 @@ Contents
    client
    communication
    events
+   logging
 
 .. toctree::
    :maxdepth: 1

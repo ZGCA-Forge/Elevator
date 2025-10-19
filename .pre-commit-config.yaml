@@ -75,7 +75,7 @@ repos:
     hooks:
       - id: prettier
         types_or: [yaml, json, markdown]
-        exclude: "^(build/|dist/|__pycache__/|\\.mypy_cache/|\\.pytest_cache/|htmlcov/|\\.idea/|\\.vscode/|docs/_build/|elevatorpy\\.egg-info/|elevator_saga\\.egg-info/)"
+        exclude: "^(build/|dist/|__pycache__/|\\.mypy_cache/|\\.pytest_cache/|htmlcov/|\\.idea/|\\.vscode/|docs/_build/|elevatorpy\\.egg-info/|\\.egg-info/)"
 
 # Global settings
 default_stages: [pre-commit, pre-push]

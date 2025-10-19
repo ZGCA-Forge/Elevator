@@ -14,7 +14,7 @@ from elevator_saga.client.proxy_models import ProxyElevator, ProxyFloor, ProxyPa
 from elevator_saga.core.models import EventType, SimulationEvent, SimulationState
 
 # 避免循环导入，使用运行时导入
-from elevator_saga.utils.debug import debug_log
+from elevator_saga.utils.logger import debug, error, info, warning
 
 
 class ElevatorController(ABC):
@@ -24,13 +24,14 @@ class ElevatorController(ABC):
     用户通过继承此类并实现 abstract 方法来创建自己的调度算法
     """
 
-    def __init__(self, server_url: str = "http://127.0.0.1:8000", debug: bool = False):
+    def __init__(self, server_url: str = "http://127.0.0.1:8000", debug: bool = False, client_type: str = "algorithm"):
         """
         初始化控制器
 
         Args:
             server_url: 服务器URL
             debug: 是否启用debug模式
+            client_type: 客户端类型 ("algorithm" 或 "gui")
         """
         self.server_url = server_url
         self.debug = debug
@@ -39,9 +40,10 @@ class ElevatorController(ABC):
         self.current_tick = 0
         self.is_running = False
         self.current_traffic_max_tick: int = 0
+        self.client_type = client_type
 
-        # 初始化API客户端
-        self.api_client = ElevatorAPIClient(server_url)
+        # 初始化API客户端，传递客户端类型
+        self.api_client = ElevatorAPIClient(server_url, client_type=client_type)
 
     @abstractmethod
     def on_init(self, elevators: List[Any], floors: List[Any]) -> None:
@@ -84,13 +86,13 @@ class ElevatorController(ABC):
         """
         算法启动前的回调 - 可选实现
         """
-        print(f"启动 {self.__class__.__name__} 算法")
+        info(f"启动 {self.__class__.__name__} 算法", prefix="CONTROLLER")
 
     def on_stop(self) -> None:
         """
         算法停止后的回调 - 可选实现
         """
-        print(f"停止 {self.__class__.__name__} 算法")
+        info(f"停止 {self.__class__.__name__} 算法", prefix="CONTROLLER")
 
     @abstractmethod
     def on_passenger_call(self, passenger: ProxyPassenger, floor: ProxyFloor, direction: str) -> None:
@@ -206,9 +208,9 @@ class ElevatorController(ABC):
         try:
             self._run_event_driven_simulation()
         except KeyboardInterrupt:
-            print("\n用户中断了算法运行")
+            info("用户中断了算法运行", prefix="CONTROLLER")
         except Exception as e:
-            print(f"算法运行出错: {e}")
+            error(f"算法运行出错: {e}", prefix="CONTROLLER")
             raise
         finally:
             self.is_running = False
@@ -217,7 +219,7 @@ class ElevatorController(ABC):
     def stop(self) -> None:
         """停止控制器"""
         self.is_running = False
-        print(f"停止 {self.__class__.__name__}")
+        info(f"停止 {self.__class__.__name__}", prefix="CONTROLLER")
 
     def on_simulation_complete(self, final_state: Dict[str, Any]) -> None:
         """
@@ -235,10 +237,10 @@ class ElevatorController(ABC):
             try:
                 state = self.api_client.get_state()
             except ConnectionResetError as _:  # noqa: F841
-                print(f"模拟器可能并没有开启，请检查模拟器是否启动 {self.api_client.base_url}")
+                error(f"模拟器可能并没有开启，请检查模拟器是否启动 {self.api_client.base_url}", prefix="CONTROLLER")
                 os._exit(1)
             if state.tick > 0:
-                print("模拟器可能已经开始了一次模拟，执行重置...")
+                warning("模拟器可能已经开始了一次模拟，执行重置...", prefix="CONTROLLER")
                 self.api_client.reset()
                 time.sleep(0.3)
                 return self._run_event_driven_simulation()
@@ -247,7 +249,7 @@ class ElevatorController(ABC):
             # 获取当前流量文件的最大tick数
             self._update_traffic_info()
             if self.current_traffic_max_tick == 0:
-                print("模拟器接收到的最大tick时间为0，可能所有的测试案例已用完，请求重置...")
+                warning("模拟器接收到的最大tick时间为0，可能所有的测试案例已用完，请求重置...", prefix="CONTROLLER")
                 self.api_client.next_traffic_round(full_reset=True)
                 time.sleep(0.3)
                 return self._run_event_driven_simulation()
@@ -297,7 +299,7 @@ class ElevatorController(ABC):
                     self._reset_and_reinit()
 
         except Exception as e:
-            print(f"模拟运行错误: {e}")
+            error(f"模拟运行错误: {e}", prefix="CONTROLLER")
             raise
 
     def _update_wrappers(self, state: SimulationState, init: bool = False) -> None:
@@ -321,12 +323,12 @@ class ElevatorController(ABC):
             traffic_info = self.api_client.get_traffic_info()
             if traffic_info:
                 self.current_traffic_max_tick = int(traffic_info["max_tick"])
-                debug_log(f"Updated traffic info - max_tick: {self.current_traffic_max_tick}")
+                debug(f"Updated traffic info - max_tick: {self.current_traffic_max_tick}", prefix="CONTROLLER")
             else:
-                debug_log("Failed to get traffic info")
+                warning("Failed to get traffic info", prefix="CONTROLLER")
                 self.current_traffic_max_tick = 0
         except Exception as e:
-            debug_log(f"Error updating traffic info: {e}")
+            error(f"Error updating traffic info: {e}", prefix="CONTROLLER")
             self.current_traffic_max_tick = 0
 
     def _handle_single_event(self, event: SimulationEvent) -> None:
@@ -430,5 +432,5 @@ class ElevatorController(ABC):
             self._internal_init(self.elevators, self.floors)
 
         except Exception as e:
-            debug_log(f"重置失败: {e}")
+            error(f"重置失败: {e}", prefix="CONTROLLER")
             raise
