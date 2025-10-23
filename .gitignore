@@ -4,6 +4,9 @@
 elevator_saga/traffic/test_cases.py
 elevator_saga/traffic/test_cases
 result.json
+batch_grading.py
+students.csv
+ElevatorTest
 
 # Compiled Python files
 __pycache__/
