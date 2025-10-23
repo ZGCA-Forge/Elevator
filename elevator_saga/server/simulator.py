@@ -892,8 +892,8 @@ class ElevatorSimulation:
                 total_energy_consumption=total_energy,
             )
 
-        floor_wait_times = [float(p.floor_wait_time) for p in completed]
-        arrival_wait_times = [float(p.arrival_wait_time) for p in completed]
+        floor_wait_times = [float(p.floor_wait_time) for p in self.state.passengers.values()]
+        arrival_wait_times = [float(p.arrival_wait_time) for p in self.state.passengers.values()]
 
         def average_excluding_top_percent(data: List[float], exclude_percent: int) -> float:
             """计算排除掉最长的指定百分比后的平均值"""
