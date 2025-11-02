@@ -1145,7 +1145,7 @@ def main() -> None:
     parser = argparse.ArgumentParser(description="Elevator Simulation Server (Async)")
     parser.add_argument("--host", default="127.0.0.1", help="Server host")
     parser.add_argument("--port", type=int, default=8000, help="Server port")
-    parser.add_argument("--debug", default=True, action="store_true", help="Enable debug logging")
+    parser.add_argument("--debug", default=False, action="store_true", help="Enable debug logging")
 
     args = parser.parse_args()
 
